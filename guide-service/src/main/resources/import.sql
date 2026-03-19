@@ -1,6 +1,4 @@
--- ==========================================
--- 1. KATALOG JEZIKA (15 unosa) - OSTaje ISTO
--- ==========================================
+-- 1. KATALOG JEZIKA (15 unosa)
 INSERT INTO language (language_name, language_code) VALUES ('Engleski', 'EN');
 INSERT INTO language (language_name, language_code) VALUES ('Nemački', 'DE');
 INSERT INTO language (language_name, language_code) VALUES ('Francuski', 'FR');
@@ -17,9 +15,7 @@ INSERT INTO language (language_name, language_code) VALUES ('Poljski', 'PL');
 INSERT INTO language (language_name, language_code) VALUES ('Rumunski', 'RO');
 INSERT INTO language (language_name, language_code) VALUES ('Holandski', 'NL');
 
--- ==========================================
--- 2. PROFILI VODIČA (15 unosa) - OSTaje ISTO
--- ==========================================
+-- 2. PROFILI VODIČA (15 unosa)
 INSERT INTO guide_profile (first_name, last_name, bio, rating, contact_email, phone_number) VALUES ('Marko', 'Marković', 'Specijalista za visokogorstvo.', 4.8, 'marko@guide.rs', '+38164111222');
 INSERT INTO guide_profile (first_name, last_name, bio, rating, contact_email, phone_number) VALUES ('Jelena', 'Jović', 'Ljubitelj pećina i speleologije.', 4.5, 'jelena@guide.rs', '+38164333444');
 INSERT INTO guide_profile (first_name, last_name, bio, rating, contact_email, phone_number) VALUES ('Igor', 'Stanić', 'Skipper na divljim vodama.', 4.9, 'igor@guide.rs', '+38164555666');

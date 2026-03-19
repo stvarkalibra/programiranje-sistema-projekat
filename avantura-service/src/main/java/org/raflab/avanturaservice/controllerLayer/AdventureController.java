@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/adventures")
@@ -68,5 +69,31 @@ public class AdventureController {
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) String difficulty) {
         return ResponseEntity.ok(adventureService.filterAdventures(categoryId, maxPrice, difficulty));
+    }
+
+    @Operation(summary = "Filtriranje avantura određenog vodiča koje su skuplje od zadate cene (OPENFEIGN)")
+    @GetMapping("/guide/{guideId}/premium")
+    public ResponseEntity<List<AdventureResponse>> getPremium(
+            @PathVariable Long guideId,
+            @RequestParam Double minPrice) {
+        return ResponseEntity.ok(adventureService.getPremiumAdventures(guideId, minPrice));
+    }
+
+    @Operation(summary = "Izračunavanje ukupne sume svih osnovnih cena (basePrice) za sve ture jednog vodiča (OPENFEIGN)")
+    @GetMapping("/guide/{guideId}/revenue")
+    public ResponseEntity<Double> getRevenue(@PathVariable Long guideId) {
+        return ResponseEntity.ok(adventureService.getTotalGuideRevenue(guideId));
+    }
+
+    @Operation(summary = "Logička provera opterećenja vodiča na osnovu broja aktivnih tura u bazi (OPENFEIGN)")
+    @GetMapping("/guide/{guideId}/check-overload")
+    public ResponseEntity<Boolean> checkOverload(@PathVariable Long guideId) {
+        return ResponseEntity.ok(adventureService.isGuideOverloaded(guideId));
+    }
+
+    @Operation(summary = "Dobavljanje svih avantura za određenu kategoriju putem JOIN upita (OPENFEIGN + JOIN)")
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<AdventureResponse>> getByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(adventureService.getAdventuresByCategory(categoryId));
     }
 }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -114,6 +115,33 @@ public class AdventureService {
                 .filter(a -> (categoryId == null || a.getAdventureCategory().getId().equals(categoryId)))
                 .filter(a -> (maxPrice == null || a.getBasePrice() <= maxPrice))
                 .filter(a -> (difficulty == null || a.getDifficultyLevel().equalsIgnoreCase(difficulty)))
+                .map(adventureEntityMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 1. Metoda: Premium avanture (Filter na strani drugog servisa)
+    public List<AdventureResponse> getPremiumAdventures(Long guideId, Double minPrice) {
+        return adventureRepository.findByGuideId(guideId).stream()
+                .filter(a -> a.getBasePrice() >= minPrice)
+                .map(adventureEntityMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 2. Metoda: Ukupan prihod (Agregacija)
+    public Double getTotalGuideRevenue(Long guideId) {
+        return adventureRepository.findByGuideId(guideId).stream()
+                .mapToDouble(Adventure::getBasePrice)
+                .sum();
+    }
+
+    // 3. Metoda: Overload (Logička provera)
+    public Boolean isGuideOverloaded(Long guideId) {
+        // Overload je ako ima više od 3 avanture
+        return adventureRepository.findByGuideId(guideId).size() > 3;
+    }
+
+    public List<AdventureResponse> getAdventuresByCategory(Long categoryId) {
+        return adventureRepository.findByCategoryId(categoryId).stream()
                 .map(adventureEntityMapper::toResponse)
                 .collect(Collectors.toList());
     }
