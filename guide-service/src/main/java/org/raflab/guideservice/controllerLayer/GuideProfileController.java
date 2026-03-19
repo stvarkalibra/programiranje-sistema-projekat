@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.raflab.guideservice.clientLayer.RemoteAdventureDTO;
 import org.raflab.guideservice.dtoLayer.request.GuideProfileRequest;
 import org.raflab.guideservice.dtoLayer.response.GuideProfileResponse;
+import org.raflab.guideservice.facade.AdventureFacade;
 import org.raflab.guideservice.serviceLayer.GuideProfileService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +19,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/guides")
 @RequiredArgsConstructor
-@Tag(name = "Guide Profile Controller", description = "Endpointi za upravljanje profilima vodiča")
+@Tag(name = "Guide Profile Controller", description = "Endpointi za upravljanje profilima vodiča i eksternu komunikaciju")
 public class GuideProfileController {
 
+    // Koristimo konkretan servis za lokalne operacije, a interfejs (Fasadu) za eksterne
     private final GuideProfileService guideService;
+    private final AdventureFacade adventureFacade;
+
+    // --- LOKALNE OPERACIJE (CRUD I LOGIKA VODIČA) ---
 
     @Operation(summary = "Prikaz svih vodiča")
     @GetMapping
@@ -84,29 +89,32 @@ public class GuideProfileController {
         return ResponseEntity.ok(guideService.getRatingDistribution());
     }
 
-    @Operation(summary = "Prikaz premium avantura vodiča iznad određene cene (OPENFEIGN)")
+    // --- EKSTERNE OPERACIJE (POZIVI KA AVANTURA-SERVICE PREKO FASADE) ---
+
+    @Operation(summary = "Prikaz premium avantura vodiča iznad određene cene (FACADE + OPENFEIGN)")
     @GetMapping("/{id}/premium-adventures")
     public ResponseEntity<List<RemoteAdventureDTO>> getPremium(
             @PathVariable Long id,
             @RequestParam Double minPrice) {
-        return ResponseEntity.ok(guideService.getPremiumReport(id, minPrice));
+        // Pozivamo metodu definisanu u AdventureFacade interfejsu
+        return ResponseEntity.ok(adventureFacade.getPremiumReport(id, minPrice));
     }
 
-    @Operation(summary = "Izračunavanje ukupne bazične vrednosti svih tura koje vodič drži (OPENFEIGN)")
+    @Operation(summary = "Izračunavanje ukupne bazične vrednosti svih tura koje vodič drži (FACADE + OPENFEIGN)")
     @GetMapping("/{id}/total-revenue")
     public ResponseEntity<Double> getRevenue(@PathVariable Long id) {
-        return ResponseEntity.ok(guideService.getRevenue(id));
+        return ResponseEntity.ok(adventureFacade.getRevenue(id));
     }
 
-    @Operation(summary = "Provera da li je vodič preopterećen teškim i ekstremnim turama (OPENFEIGN)")
+    @Operation(summary = "Provera da li je vodič preopterećen teškim i ekstremnim turama (FACADE + OPENFEIGN)")
     @GetMapping("/{id}/is-overloaded")
     public ResponseEntity<Boolean> getOverload(@PathVariable Long id) {
-        return ResponseEntity.ok(guideService.checkOverload(id));
+        return ResponseEntity.ok(adventureFacade.checkOverload(id));
     }
 
-    @Operation(summary = "Globalna pretraga avantura po kategoriji (OPENFEIGN + JOIN)")
+    @Operation(summary = "Globalna pretraga avantura po kategoriji (FACADE + OPENFEIGN + JOIN)")
     @GetMapping("/search/category/{categoryId}")
     public ResponseEntity<List<RemoteAdventureDTO>> searchByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(guideService.getAllInCategory(categoryId));
+        return ResponseEntity.ok(adventureFacade.getAllInCategory(categoryId));
     }
 }

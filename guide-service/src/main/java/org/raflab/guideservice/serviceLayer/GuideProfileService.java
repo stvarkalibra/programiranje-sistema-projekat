@@ -8,6 +8,7 @@ import org.raflab.guideservice.clientLayer.RemoteAdventureDTO;
 import org.raflab.guideservice.dtoLayer.request.GuideProfileRequest;
 import org.raflab.guideservice.dtoLayer.response.GuideProfileResponse;
 import org.raflab.guideservice.entityLayer.GuideProfile;
+import org.raflab.guideservice.facade.AdventureFacade;
 import org.raflab.guideservice.repositoryLayer.CertificationRepository;
 import org.raflab.guideservice.repositoryLayer.GuideLanguageRepository;
 import org.raflab.guideservice.repositoryLayer.GuideProfileRepository;
@@ -25,13 +26,15 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class GuideProfileService {
+public class GuideProfileService implements AdventureFacade { // Implementira Fasadu bez brisanja ičega
 
     private final GuideProfileRepository guideRepository;
     private final GuideProfileEntityMapper mapper;
     private final CertificationRepository certificationRepository;
     private final GuideLanguageRepository guideLanguageRepository;
     private final AdventureClient adventureClient;
+
+    // --- LOKALNA LOGIKA VODIČA (SVE OSTAJE ISTO) ---
 
     @Transactional
     public GuideProfileResponse createGuide(GuideProfileRequest request) {
@@ -59,7 +62,6 @@ public class GuideProfileService {
         GuideProfile existing = guideRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vodič ID " + id + " ne postoji."));
 
-        // Validacija Emaila
         if (!existing.getContactEmail().equals(request.getContactEmail()) &&
                 guideRepository.existsByContactEmail(request.getContactEmail())) {
             throw new RuntimeException("Greška: Email '" + request.getContactEmail() + "' je zauzet.");
@@ -70,7 +72,7 @@ public class GuideProfileService {
         existing.setBio(request.getBio());
         existing.setContactEmail(request.getContactEmail());
         existing.setPhoneNumber(request.getPhoneNumber());
-        existing.setRating(request.getRating()); // Dodato ažuriranje rejtinga kroz request
+        existing.setRating(request.getRating());
 
         return mapper.toResponse(guideRepository.save(existing));
     }
@@ -124,75 +126,54 @@ public class GuideProfileService {
         );
     }
 
-    // 1. METODA: Premium Report + SLOŽENA PROVERA
+    // --- IMPLEMENTACIJA ADVENTURE FASADE (EKSTERNA KOMUNIKACIJA) ---
+
+    @Override
     @CircuitBreaker(name = "adventureCB", fallbackMethod = "fallbackPremium")
     @Retry(name = "adventureRetry")
     public List<RemoteAdventureDTO> getPremiumReport(Long guideId, Double minPrice) {
-        // Logika provere 1: Validacija ulaznih parametara pre poziva
         if (minPrice < 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cena ne može biti negativna");
-
         List<RemoteAdventureDTO> list = adventureClient.getPremiumAdventures(guideId, minPrice);
-
-        // Logika provere 2: Ako je lista sumnjivo velika (npr. > 100), loguj upozorenje
-        if (list.size() > 100) System.out.println("WARN: Neobično veliki broj premium tura za vodiča " + guideId);
-
+        if (list.size() > 100) System.out.println("WARN: Neobično veliki broj premium tura!");
         return list;
     }
 
-    // 2. METODA: Prihod + DODAT RETRY + PROVERA
+    @Override
     @CircuitBreaker(name = "adventureCB", fallbackMethod = "fallbackRevenue")
-    @Retry(name = "adventureRetry") // Dodato zbog zahteva zadatka
+    @Retry(name = "adventureRetry")
     public Double getRevenue(Long guideId) {
         Double revenue = adventureClient.getGuideRevenue(guideId);
-
-        // Logika provere 3: Provera anomalija u podacima
-        if (revenue > 1000000) {
-            System.out.println("ALERT: Detektovan nerealno visok prihod!");
-        }
+        if (revenue > 1000000) System.out.println("ALERT: Detektovan nerealno visok prihod!");
         return revenue;
     }
 
-    // 3. METODA: Overload + DODAT RETRY + PROVERA
+    @Override
     @CircuitBreaker(name = "adventureCB", fallbackMethod = "fallbackOverload")
-    @Retry(name = "adventureRetry") // Dodato zbog zahteva zadatka
+    @Retry(name = "adventureRetry")
     public Boolean checkOverload(Long guideId) {
-        // Ovde možemo dodati proveru da li vodič uopšte postoji u našoj bazi pre poziva drugog servisa
-        // To bi bila "složenija provera podataka pre daljeg procesiranja"
         return adventureClient.isGuideOverloaded(guideId);
     }
 
+    @Override
     @CircuitBreaker(name = "adventureCB", fallbackMethod = "fallbackCategoryOnly")
     @Retry(name = "adventureRetry")
     public List<RemoteAdventureDTO> getAllInCategory(Long categoryId) {
-        // Složena provera: Validacija ID-a
-        if (categoryId <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nevalidan ID kategorije.");
-        }
-
+        if (categoryId <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nevalidan ID kategorije.");
         List<RemoteAdventureDTO> adventures = adventureClient.getByCategory(categoryId);
-
-        // Dodatna logika: Ako nema avantura, logujemo informaciju
-        if (adventures.isEmpty()) {
-            System.out.println("INFO: Kategorija " + categoryId + " trenutno nema aktivnih avantura.");
-        }
-
+        if (adventures.isEmpty()) System.out.println("INFO: Kategorija " + categoryId + " je prazna.");
         return adventures;
     }
 
-    public List<RemoteAdventureDTO> fallbackCategoryOnly(Long categoryId, Throwable t) {
+    // --- FALLBACK METODE ---
+
+    public List<RemoteAdventureDTO> fallbackCategoryOnly(Long categoryId, Throwable t) { return new ArrayList<>(); }
+
+    public List<RemoteAdventureDTO> fallbackPremium(Long guideId, Double minPrice, Throwable t) {
+        System.out.println("LOG: Adventure-service nedostupan. Razlog: " + t.getMessage());
         return new ArrayList<>();
     }
 
-    public List<RemoteAdventureDTO> fallbackPremium(Long guideId, Double minPrice, Throwable t) {
-        System.out.println("LOG: Avantura-service nedostupan za premium report. Razlog: " + t.getMessage());
-        return new ArrayList<>(); // Vraća praznu listu umesto greške 500
-    }
+    public Double fallbackRevenue(Long guideId, Throwable t) { return 0.0; }
 
-    public Double fallbackRevenue(Long guideId, Throwable t) {
-        return 0.0; // Vraća nulu ako servis ne radi
-    }
-
-    public Boolean fallbackOverload(Long guideId, Throwable t) {
-        return false; // Pretpostavljamo da nije preopterećen ako ne možemo da proverimo
-    }
+    public Boolean fallbackOverload(Long guideId, Throwable t) { return false; }
 }
