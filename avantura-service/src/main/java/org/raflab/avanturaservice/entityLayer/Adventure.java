@@ -24,6 +24,8 @@ public class Adventure {
 
     private double basePrice;
 
+    private Long guideId;
+
     @ManyToOne()
     private AdventureCategory adventureCategory;
 

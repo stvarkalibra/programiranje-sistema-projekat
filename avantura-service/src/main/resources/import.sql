@@ -15,22 +15,28 @@ INSERT INTO adventure_category (name, description) VALUES ('Fishing', 'Fishing i
 INSERT INTO adventure_category (name, description) VALUES ('Horse Riding', 'Equestrian adventures');
 INSERT INTO adventure_category (name, description) VALUES ('Cultural Trips', 'Learn and explore cultures');
 
--- ADVENTURE (15 torki - mapirano na kategorije 1-15)
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Tara Rafting', 'Wild river rafting', 'Hard', 120.0, 1);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Durmitor Trek', 'Peak climbing', 'Hard', 80.0, 2);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Belgrade Underground', 'History tour', 'Easy', 30.0, 3);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Bungee Bridge', 'High jump', 'Extreme', 150.0, 4);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Zlatibor Camp', 'Star gazing', 'Medium', 60.0, 5);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Resava Cave', 'Cave exploration', 'Medium', 40.0, 6);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Serengeti Watch', 'Lion watching', 'Easy', 500.0, 7);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Iron Gate Cycle', 'Danube cycling', 'Hard', 90.0, 8);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Kopaonik Ski', 'Winter fun', 'Medium', 110.0, 9);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Drina Kayak', 'Peaceful rowing', 'Easy', 55.0, 10);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Tara Flight', 'Paragliding Tara', 'Extreme', 200.0, 11);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Stol Climb', 'Free climbing', 'Hard', 75.0, 12);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Danube Fishing', 'Big fish hunt', 'Easy', 40.0, 13);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Fruska Gora Ride', 'Horse riding', 'Medium', 65.0, 14);
-INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id) VALUES ('Viminacium Tour', 'Roman history', 'Easy', 35.0, 15);
+-- ADVENTURE (DODAT GUIDE_ID ZA TESTIRANJE)
+-- Vodič 1 (Marko): 2 avanture, ukupna cena 200, nije overload
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Tara Rafting', 'Wild river rafting', 'Hard', 120.0, 1, 1);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Durmitor Trek', 'Peak climbing', 'Hard', 80.0, 2, 1);
+
+-- Vodič 3 (Igor): 4 avanture, 3 su EXTREME -> OVO ĆE BITI OVERLOAD
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Bungee Bridge', 'High jump', 'Extreme', 150.0, 4, 3);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Tara Flight', 'Paragliding Tara', 'Extreme', 200.0, 11, 3);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Extreme Caving', 'Deep exploration', 'Extreme', 300.0, 6, 3);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Iron Gate Cycle', 'Danube cycling', 'Hard', 90.0, 8, 3);
+
+-- Ostali (razbacani guide_id od 5 do 15)
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Belgrade Underground', 'History tour', 'Easy', 30.0, 3, 6);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Berlin Underground', 'Aquarium tour', 'Easy', 80.0, 1, 6);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Zlatibor Camp', 'Star gazing', 'Medium', 60.0, 5, 5);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Resava Cave', 'Cave exploration', 'Medium', 40.0, 6, 2);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Serengeti Watch', 'Lion watching', 'Easy', 500.0, 7, 7);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Kopaonik Ski', 'Winter fun', 'Medium', 110.0, 9, 9);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Drina Kayak', 'Peaceful rowing', 'Easy', 55.0, 10, 10);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Stol Climb', 'Free climbing', 'Hard', 75.0, 12, 12);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Danube Fishing', 'Big fish hunt', 'Easy', 40.0, 13, 13);
+INSERT INTO adventure (title, description, difficulty_level, base_price, adventure_category_id, guide_id) VALUES ('Fruska Gora Ride', 'Horse riding', 'Medium', 65.0, 14, 14);
 
 -- GEAR_REQUIREMENT (15 torki - mapirano na avanture 1-15)
 INSERT INTO gear_requirement (item_name, is_mandatory, adventure_id) VALUES ('Neoprene Suit', TRUE, 1);

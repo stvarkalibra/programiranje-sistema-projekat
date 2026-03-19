@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.raflab.guideservice.clientLayer.RemoteAdventureDTO;
 import org.raflab.guideservice.dtoLayer.request.GuideProfileRequest;
 import org.raflab.guideservice.dtoLayer.response.GuideProfileResponse;
 import org.raflab.guideservice.serviceLayer.GuideProfileService;
@@ -81,5 +82,31 @@ public class GuideProfileController {
     @GetMapping("/stats/rating-distribution")
     public ResponseEntity<Map<String, Long>> getStats() {
         return ResponseEntity.ok(guideService.getRatingDistribution());
+    }
+
+    @Operation(summary = "Prikaz premium avantura vodiča iznad određene cene (OPENFEIGN)")
+    @GetMapping("/{id}/premium-adventures")
+    public ResponseEntity<List<RemoteAdventureDTO>> getPremium(
+            @PathVariable Long id,
+            @RequestParam Double minPrice) {
+        return ResponseEntity.ok(guideService.getPremiumReport(id, minPrice));
+    }
+
+    @Operation(summary = "Izračunavanje ukupne bazične vrednosti svih tura koje vodič drži (OPENFEIGN)")
+    @GetMapping("/{id}/total-revenue")
+    public ResponseEntity<Double> getRevenue(@PathVariable Long id) {
+        return ResponseEntity.ok(guideService.getRevenue(id));
+    }
+
+    @Operation(summary = "Provera da li je vodič preopterećen teškim i ekstremnim turama (OPENFEIGN)")
+    @GetMapping("/{id}/is-overloaded")
+    public ResponseEntity<Boolean> getOverload(@PathVariable Long id) {
+        return ResponseEntity.ok(guideService.checkOverload(id));
+    }
+
+    @Operation(summary = "Globalna pretraga avantura po kategoriji (OPENFEIGN + JOIN)")
+    @GetMapping("/search/category/{categoryId}")
+    public ResponseEntity<List<RemoteAdventureDTO>> searchByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(guideService.getAllInCategory(categoryId));
     }
 }
