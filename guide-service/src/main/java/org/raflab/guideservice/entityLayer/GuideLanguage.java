@@ -7,6 +7,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import java.util.Set;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -25,4 +28,7 @@ public class GuideLanguage {
     private Language language;
 
     private String proficiencyLevel; // npr. "Native", "B2", "C1"
+
+    @ManyToMany(mappedBy = "guideLanguage")
+    private List<Certification> certifications;
 }
