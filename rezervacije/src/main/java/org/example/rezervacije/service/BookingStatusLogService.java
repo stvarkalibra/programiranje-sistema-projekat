@@ -24,13 +24,9 @@ public class BookingStatusLogService {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        BookingStatusLog bookingStatusLog = new BookingStatusLog();
-        bookingStatusLog.setBooking(booking);
-        bookingStatusLog.setOldStatus(request.getOldStatus());
-        bookingStatusLog.setNewStatus(request.getNewStatus());
-        bookingStatusLog.setChangedAt(request.getChangedAt());
+        BookingStatusLog statusLog = BookingStatusLogConverter.toEntity(request, booking);
 
-        BookingStatusLog saved = bookingStatusLogRepository.save(bookingStatusLog);
+        BookingStatusLog saved = bookingStatusLogRepository.save(statusLog);
 
         return BookingStatusLogConverter.toResponse(saved);
     }

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TaxRateResponse {
+    private Long id;
     private String taxName;
     private double percentage;
 }

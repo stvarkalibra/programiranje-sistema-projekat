@@ -7,6 +7,7 @@ import org.example.finansije.response.PaymentMethodResponse;
 public class PaymentMethodConverter {
     public static PaymentMethodResponse toResponse(PaymentMethod paymentMethod) {
         PaymentMethodResponse response = new PaymentMethodResponse();
+        response.setId(paymentMethod.getId());
         response.setMethodName(paymentMethod.getMethodName());
         response.setActive(paymentMethod.isActive());
         return response;

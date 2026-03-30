@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Podaci o gostu koji se vraćaju klijentu")
 public class GuestResponse {
 
+    @Schema(description = "ID gosta", example = "1")
+    private Long id;
+
     @Schema(description = "Ime gosta", example = "Petar")
     private String firstName;
 

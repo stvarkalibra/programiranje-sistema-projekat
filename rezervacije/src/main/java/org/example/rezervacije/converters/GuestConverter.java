@@ -6,12 +6,12 @@ import org.example.rezervacije.response.GuestResponse;
 
 public class GuestConverter {
     public static GuestResponse toResponse(Guest guest) {
-        GuestResponse response = new GuestResponse(
-                guest.getFirstName(),
-                guest.getLastName(),
-                guest.getEmail(),
-                guest.getPhoneNumber()
-                );
+        GuestResponse response = new GuestResponse();
+        response.setId(guest.getId());
+        response.setFirstName(guest.getFirstName());
+        response.setLastName(guest.getLastName());
+        response.setEmail(guest.getEmail());
+        response.setPhoneNumber(guest.getPhoneNumber());
         return response;
     }
 

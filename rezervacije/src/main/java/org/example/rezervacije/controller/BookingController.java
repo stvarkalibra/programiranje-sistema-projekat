@@ -73,4 +73,10 @@ public class BookingController {
         bookingService.deleteById(id);
         return ResponseEntity.ok("Booking deleted successfully.");
     }
+
+    @GetMapping("/guest/{guestId}/total-price")
+    @Operation(summary = "Ukupan iznos booking-a za guestId")
+    public ResponseEntity<Double> sumTotalPriceByGuestId(@PathVariable Long guestId) {
+        return ResponseEntity.ok(bookingService.sumTotalPriceByGuestId(guestId));
+    }
 }

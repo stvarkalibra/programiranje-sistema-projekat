@@ -7,6 +7,7 @@ import java.time.LocalDate;
 
 @Data
 public class TransactionResponse {
+    private Long id;
     private Long invoiceId;
     private Long paymentMethodId;
     private double amount;

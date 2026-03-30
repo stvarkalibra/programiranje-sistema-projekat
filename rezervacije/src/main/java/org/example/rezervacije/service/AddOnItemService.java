@@ -25,9 +25,7 @@ public class AddOnItemService {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        AddOnItem addOnItem = AddOnItemConverter.toEntity(request);
-
-        addOnItem.setBooking(booking);
+        AddOnItem addOnItem = AddOnItemConverter.toEntity(request, booking);
 
         AddOnItem saved = addOnItemRepository.save(addOnItem);
 

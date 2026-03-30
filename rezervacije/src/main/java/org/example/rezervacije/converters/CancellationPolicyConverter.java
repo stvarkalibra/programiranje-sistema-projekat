@@ -7,6 +7,7 @@ import org.example.rezervacije.response.CancellationPolicyResponse;
 public class CancellationPolicyConverter {
     public static CancellationPolicyResponse toResponse(CancellationPolicy cancellationPolicy) {
         CancellationPolicyResponse response = new CancellationPolicyResponse();
+        response.setId(cancellationPolicy.getId());
         response.setPolicyName(cancellationPolicy.getPolicyName());
         response.setRefundPercentage(cancellationPolicy.getRefundPercentage());
         return response;

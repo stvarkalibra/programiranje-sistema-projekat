@@ -1,6 +1,8 @@
 package org.example.rezervacije.converters;
 
+import org.example.rezervacije.entity.Booking;
 import org.example.rezervacije.entity.BookingStatusLog;
+import org.example.rezervacije.request.BookingStatusLogRequest;
 import org.example.rezervacije.response.BookingStatusLogResponse;
 
 public class BookingStatusLogConverter {
@@ -15,11 +17,12 @@ public class BookingStatusLogConverter {
         return response;
     }
 
-    public static BookingStatusLog toEntity(BookingStatusLogResponse response) {
+    public static BookingStatusLog toEntity(BookingStatusLogRequest request, Booking booking) {
         BookingStatusLog bookingStatusLog = new BookingStatusLog();
-        bookingStatusLog.setOldStatus(response.getOldStatus());
-        bookingStatusLog.setNewStatus(response.getNewStatus());
-        bookingStatusLog.setChangedAt(response.getChangedAt());
+        bookingStatusLog.setBooking(booking);
+        bookingStatusLog.setOldStatus(request.getOldStatus());
+        bookingStatusLog.setNewStatus(request.getNewStatus());
+        bookingStatusLog.setChangedAt(request.getChangedAt());
         return bookingStatusLog;
     }
 }

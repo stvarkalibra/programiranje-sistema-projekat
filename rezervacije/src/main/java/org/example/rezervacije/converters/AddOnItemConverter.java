@@ -1,6 +1,7 @@
 package org.example.rezervacije.converters;
 
 import org.example.rezervacije.entity.AddOnItem;
+import org.example.rezervacije.entity.Booking;
 import org.example.rezervacije.request.AddOnItemRequest;
 import org.example.rezervacije.response.AddOnItemResponse;
 
@@ -17,10 +18,10 @@ public class AddOnItemConverter {
         return response;
     }
 
-    public static AddOnItem toEntity(AddOnItemRequest request) {
+    public static AddOnItem toEntity(AddOnItemRequest request, Booking booking) {
 
         AddOnItem addOnItem = new AddOnItem();
-
+        addOnItem.setBooking(booking);
         addOnItem.setServiceName(request.getServiceName());
         addOnItem.setPrice(request.getPrice());
 

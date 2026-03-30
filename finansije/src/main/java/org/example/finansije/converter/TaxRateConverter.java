@@ -6,10 +6,11 @@ import org.example.finansije.response.TaxRateResponse;
 
 public class TaxRateConverter {
     public static TaxRateResponse toResponse(TaxRate taxRate) {
-        TaxRateResponse taxRateResponse = new TaxRateResponse();
-        taxRateResponse.setTaxName(taxRate.getTaxName());
-        taxRateResponse.setPercentage(taxRate.getPercentage());
-        return taxRateResponse;
+        TaxRateResponse response = new TaxRateResponse();
+        response.setId(taxRate.getTaxRateId());
+        response.setTaxName(taxRate.getTaxName());
+        response.setPercentage(taxRate.getPercentage());
+        return response;
     }
 
     public static TaxRate toEntity(TaxRateRequest request) {

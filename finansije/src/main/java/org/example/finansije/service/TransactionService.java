@@ -31,11 +31,8 @@ public class TransactionService {
         PaymentMethod paymentMethod = paymentMethodRepository.findById(request.getPaymentMethodId())
                 .orElseThrow(() -> new RuntimeException("Payment method not found"));
 
-        Transaction transaction = new Transaction();
-        transaction.setInvoice(invoice);
-        transaction.setPaymentMethod(paymentMethod);
-        transaction.setAmount(request.getAmount());
-        transaction.setTransactionDate(request.getTransactionDate());
+        Transaction transaction = TransactionConverter.toEntity(request, invoice, paymentMethod);
+
 
         Transaction saved = transactionRepository.save(transaction);
 

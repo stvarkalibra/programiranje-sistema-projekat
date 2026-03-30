@@ -31,10 +31,7 @@ public class BookingService {
         CancellationPolicy policy = policyRepository.findById(request.getPolicyId())
                 .orElseThrow(() -> new RuntimeException("Policy not found"));
 
-        Booking booking = BookingConverter.toEntity(request);
-
-        booking.setGuest(guest);
-        booking.setPolicy(policy);
+        Booking booking = BookingConverter.toEntity(request, guest, policy);
 
         Booking saved = bookingRepository.save(booking);
 
@@ -103,5 +100,13 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         bookingRepository.delete(booking);
+    }
+
+    public double sumTotalPriceByGuestId(Long guestId) {
+
+        return bookingRepository.findByGuestId(guestId)
+                .stream()
+                .mapToDouble(Booking::getTotalPrice)
+                .sum();
     }
 }

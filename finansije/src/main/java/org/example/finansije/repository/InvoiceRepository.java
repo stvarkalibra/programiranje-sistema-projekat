@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findByStatus(InvoiceStatus status);
-    List<Invoice> findByBookindId(Long bookingId);
+    List<Invoice> findByBookingId(Long bookingId);
     boolean existsByTaxRate_TaxRateId(Long taxRateId);
 }

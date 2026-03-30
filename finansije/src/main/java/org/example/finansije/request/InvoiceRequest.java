@@ -16,7 +16,6 @@ public class InvoiceRequest {
     private Long taxRateId;
     @NotNull
     private double subtotal;
-    @NotNull
     private double totalAmount;
     @NotNull
     private InvoiceStatus status;

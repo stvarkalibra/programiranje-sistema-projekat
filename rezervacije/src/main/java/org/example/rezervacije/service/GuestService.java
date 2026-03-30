@@ -72,11 +72,17 @@ public class GuestService {
 
     @Transactional
     public void deleteByEmail(String email) {
-        guestRepository.deleteByEmail(email);
+        Guest guest = guestRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Guest not found"));
+
+        guestRepository.delete(guest);
     }
 
     @Transactional
     public void deleteByPhoneNumber(String phoneNumber) {
-        guestRepository.deleteByPhoneNumber(phoneNumber);
+        Guest guest = guestRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() -> new RuntimeException("Guest not found"));
+
+        guestRepository.delete(guest);
     }
 }

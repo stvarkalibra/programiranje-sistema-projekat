@@ -9,6 +9,7 @@ import org.example.finansije.enums.InvoiceStatus;
 @AllArgsConstructor
 @NoArgsConstructor
 public class InvoiceResponse {
+    private Long id;
     private Long bookingId;
     private Long taxRateId;
     private double subtotal;

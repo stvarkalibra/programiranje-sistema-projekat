@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PaymentMethodResponse {
+    private Long  id;
     private String methodName;
     private boolean isActive;
 }

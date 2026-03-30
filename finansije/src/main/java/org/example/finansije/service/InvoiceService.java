@@ -26,8 +26,12 @@ public class InvoiceService {
         TaxRate taxRate = taxRateRepository.findById(request.getTaxRateId())
                 .orElseThrow(() -> new RuntimeException("TaxRate not found"));
 
-        Invoice invoice = InvoiceConverter.toEntity(request);
-        invoice.setTaxRate(taxRate);
+        Invoice invoice = InvoiceConverter.toEntity(request, taxRate);
+
+        if (invoice.getTotalAmount() == 0) {
+            double total = invoice.getSubtotal() * (1 + invoice.getTaxRate().getPercentage() / 100);
+            invoice.setTotalAmount(Math.round(total * 100.0) / 100.0);
+        }
 
         Invoice saved = invoiceRepository.save(invoice);
 
@@ -60,7 +64,7 @@ public class InvoiceService {
 
     public List<InvoiceResponse> findByBookingId(Long bookingId) {
 
-        return invoiceRepository.findByBookindId(bookingId)
+        return invoiceRepository.findByBookingId(bookingId)
                 .stream()
                 .map(InvoiceConverter::toResponse)
                 .collect(Collectors.toList());
@@ -74,7 +78,7 @@ public class InvoiceService {
         TaxRate taxRate = taxRateRepository.findById(request.getTaxRateId())
                 .orElseThrow(() -> new RuntimeException("TaxRate not found"));
 
-        invoice.setBookindId(request.getBookingId());
+        invoice.setBookingId(request.getBookingId());
         invoice.setTaxRate(taxRate);
         invoice.setSubtotal(request.getSubtotal());
         invoice.setTotalAmount(request.getTotalAmount());
