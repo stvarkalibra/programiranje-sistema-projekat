@@ -5,11 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true) // [Cilj] Ako kolega doda 50 polja, tvoj servis ne puca [cite: 45, 47]
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RemoteAdventureDTO {
     private Long id;
 
-    @JsonProperty("title") // [Cilj] Ako on promeni 'title' u 'naslov_ture', menjaš samo ovde [cite: 39]
+    @JsonProperty("title")
     private String adventureName;
 
     @JsonProperty("basePrice")
