@@ -1,7 +1,6 @@
 package org.raflab.avanturaservice.utils;
 
 import org.raflab.avanturaservice.dtoLayer.request.AdventureRequest;
-
 import org.raflab.avanturaservice.dtoLayer.response.AdventureResponse;
 import org.raflab.avanturaservice.entityLayer.Adventure;
 import org.raflab.avanturaservice.entityLayer.AdventureCategory;
@@ -10,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AdventureEntityMapper {
 
-    // Konverzija iz Request DTO u Entitet
+    // DTO -> ENTITY
     public Adventure toEntity(AdventureRequest dto, AdventureCategory category) {
         if (dto == null) return null;
 
@@ -23,7 +22,7 @@ public class AdventureEntityMapper {
                 .build();
     }
 
-    // Konverzija iz Entiteta u Response DTO
+    // ENTITY -> DTO
     public AdventureResponse toResponse(Adventure entity) {
         if (entity == null) return null;
 

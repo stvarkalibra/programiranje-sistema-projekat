@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Data
@@ -27,4 +28,7 @@ public class Certification {
 
     @ManyToOne
     private GuideProfile guideProfile;
+
+    @ManyToMany
+    private List<GuideLanguage> guideLanguage;
 }
