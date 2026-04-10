@@ -49,8 +49,7 @@ public class AddOnItemService {
     }
 
     public List<AddOnItemResponse> findByBookingId(Long bookingId) {
-
-        return addOnItemRepository.findByBookingId(bookingId)
+        return addOnItemRepository.findByBooking_Id(bookingId)
                 .stream()
                 .map(AddOnItemConverter::toResponse)
                 .collect(Collectors.toList());

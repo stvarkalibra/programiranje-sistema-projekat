@@ -3,15 +3,23 @@ package org.example.rezervacije.service;
 import lombok.RequiredArgsConstructor;
 import org.example.rezervacije.converters.BookingConverter;
 import org.example.rezervacije.entity.Booking;
+import org.example.rezervacije.entity.BookingStatusLog;
 import org.example.rezervacije.entity.CancellationPolicy;
 import org.example.rezervacije.entity.Guest;
-import org.example.rezervacije.repository.BookingRepository;
-import org.example.rezervacije.repository.CancellationPolicyRepository;
-import org.example.rezervacije.repository.GuestRepository;
+import org.example.rezervacije.enums.BookingStatus;
+import org.example.rezervacije.factory.RefundStrategyFactory;
+import org.example.rezervacije.repository.*;
 import org.example.rezervacije.request.BookingRequest;
 import org.example.rezervacije.response.BookingResponse;
+import org.example.rezervacije.response.CancellationResponse;
+import org.example.rezervacije.response.GuestBookingStatsResponse;
+import org.example.rezervacije.strategy.RefundStrategy;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +30,9 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final GuestRepository guestRepository;
     private final CancellationPolicyRepository policyRepository;
+    private final AddOnItemRepository addOnItemRepository;
+    private final RefundStrategyFactory refundStrategyFactory;
+    private final BookingStatusLogRepository bookingStatusLogRepository;
 
     public BookingResponse save(BookingRequest request) {
 
@@ -34,6 +45,14 @@ public class BookingService {
         Booking booking = BookingConverter.toEntity(request, guest, policy);
 
         Booking saved = bookingRepository.save(booking);
+
+        BookingStatusLog log = new BookingStatusLog();
+        log.setBooking(booking);
+        log.setOldStatus(booking.getStatus());
+        log.setNewStatus(booking.getStatus());
+        log.setChangedAt(LocalDateTime.now());
+
+        bookingStatusLogRepository.save(log);
 
         return BookingConverter.toResponse(saved);
     }
@@ -49,12 +68,15 @@ public class BookingService {
     public BookingResponse findById(Long id) {
 
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Booking with id " + id + " not found."
+                ));
 
         return BookingConverter.toResponse(booking);
     }
 
-    public List<BookingResponse> findByStatus(org.example.rezervacije.enums.BookingStatus status) {
+    public List<BookingResponse> findByStatus(BookingStatus status) {
 
         return bookingRepository.findByStatus(status)
                 .stream()
@@ -81,6 +103,10 @@ public class BookingService {
         CancellationPolicy policy = policyRepository.findById(request.getPolicyId())
                 .orElseThrow(() -> new RuntimeException("Policy not found"));
 
+        BookingStatusLog log = new BookingStatusLog();
+
+        log.setOldStatus(booking.getStatus());
+
         booking.setGuest(guest);
         booking.setPolicy(policy);
         booking.setUnitId(request.getUnitId());
@@ -90,6 +116,11 @@ public class BookingService {
         booking.setStatus(request.getStatus());
 
         Booking updated = bookingRepository.save(booking);
+        log.setBooking(booking);
+        log.setNewStatus(booking.getStatus());
+        log.setChangedAt(LocalDateTime.now());
+
+        bookingStatusLogRepository.save(log);
 
         return BookingConverter.toResponse(updated);
     }
@@ -108,5 +139,66 @@ public class BookingService {
                 .stream()
                 .mapToDouble(Booking::getTotalPrice)
                 .sum();
+    }
+
+    public double getTotalPrice(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        double bookingPrice = booking.getTotalPrice();
+        double addOnItemsPrice = addOnItemRepository.sumPriceByBookingId(bookingId);
+
+        return bookingPrice + addOnItemsPrice;
+    }
+
+    public CancellationResponse cancelBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new RuntimeException("Booking is already cancelled");
+        }
+
+        if (booking.getStatus() == BookingStatus.COMPLETED) {
+            throw new RuntimeException("Completed booking cannot be cancelled");
+        }
+
+        if (booking.getStartDate().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Booking already started and cannot be cancelled");
+        }
+
+        BookingStatus oldStatus = booking.getStatus();
+
+        double totalAmount = getTotalPrice(bookingId);
+        double refundPercentage = booking.getPolicy().getRefundPercentage();
+
+        RefundStrategy refundStrategy = refundStrategyFactory.createRefundStrategy(booking);
+        double refundAmount = refundStrategy.calculateRefund(totalAmount, refundPercentage);
+
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        BookingStatusLog log = new BookingStatusLog();
+        log.setBooking(booking);
+        log.setOldStatus(oldStatus);
+        log.setNewStatus(BookingStatus.CANCELLED);
+        log.setChangedAt(LocalDateTime.now());
+
+        bookingStatusLogRepository.save(log);
+
+        bookingRepository.save(booking);
+
+        return new CancellationResponse(
+                booking.getId(),
+                oldStatus,
+                booking.getStatus(),
+                totalAmount,
+                refundAmount,
+                refundStrategy.getStrategyName(),
+                "Booking cancelled successfully."
+        );
+    }
+
+    public List<GuestBookingStatsResponse> getGuestBookingStats() {
+        return bookingRepository.getGuestBookingStats();
     }
 }

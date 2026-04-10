@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.finansije.request.TransactionRequest;
+import org.example.finansije.response.PaymentMethodStatsResponse;
 import org.example.finansije.response.TransactionResponse;
 import org.example.finansije.service.TransactionService;
 import org.springframework.http.ResponseEntity;
@@ -71,5 +72,11 @@ public class TransactionController {
 
         transactionService.deleteById(id);
         return ResponseEntity.ok("Transaction deleted successfully.");
+    }
+
+    @GetMapping("/payment-methods-statistics")
+    @Operation(summary = "Slozeniji upit nad bazom")
+    public ResponseEntity<List<PaymentMethodStatsResponse>> getPaymentMethodStatistics() {
+        return ResponseEntity.ok(transactionService.getPaymentMethodStatistics());
     }
 }
