@@ -1,5 +1,6 @@
 package org.example.gateway.filter;
 
+import lombok.RequiredArgsConstructor;
 import org.example.gateway.dto.AuthValidationResponse;
 import org.example.gateway.service.RouteRoleService;
 import org.example.gateway.util.ErrorResponseWriter;
@@ -19,106 +20,129 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class AuthenticationGatewayFilter implements GlobalFilter, Ordered {
 
     private final WebClient authWebClient;
     private final RouteRoleService routeRoleService;
     private final ErrorResponseWriter errorResponseWriter;
 
-    public AuthenticationGatewayFilter(WebClient authWebClient,
-                                       RouteRoleService routeRoleService,
-                                       ErrorResponseWriter errorResponseWriter) {
-        this.authWebClient = authWebClient;
-        this.routeRoleService = routeRoleService;
-        this.errorResponseWriter = errorResponseWriter;
-    }
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        long startTime = System.currentTimeMillis();
-
         String path = exchange.getRequest().getURI().getPath();
 
+        // Preskačemo actuator i eventualno swagger/gateway javne rute ako hoćete
         if (path.startsWith("/actuator")) {
             return chain.filter(exchange);
         }
 
-        String traceId = resolveTraceId(exchange);
         String apiKey = exchange.getRequest().getHeaders().getFirst(HeaderNames.API_KEY);
+        String traceId = exchange.getRequest().getHeaders().getFirst(HeaderNames.TRACE_ID);
 
+        if (traceId == null || traceId.isBlank()) {
+            traceId = UUID.randomUUID().toString();
+        }
+
+        // Ako nema API key -> 401
         if (apiKey == null || apiKey.isBlank()) {
             return errorResponseWriter.write(
                     exchange.getResponse(),
                     HttpStatus.UNAUTHORIZED,
-                    "Missing X-API-KEY header",
+                    "Missing API key",
                     traceId
             );
         }
 
+        String finalTraceId = traceId;
+
         return authWebClient.get()
                 .uri("/api/auth/validate")
                 .header(HeaderNames.API_KEY, apiKey)
-                .header(HeaderNames.TRACE_ID, traceId)
-                .retrieve()
-                .bodyToMono(AuthValidationResponse.class)
-                .flatMap(authResponse -> {
-                    if (authResponse == null || !authResponse.isValid()) {
+                .header(HeaderNames.TRACE_ID, finalTraceId)
+                .exchangeToMono(response -> {
+
+                    // Ako je auth uspešno odgovorio
+                    if (response.statusCode().is2xxSuccessful()) {
+                        return response.bodyToMono(AuthValidationResponse.class)
+                                .flatMap(authResponse -> {
+                                    if (authResponse == null || !authResponse.isValid()) {
+                                        return errorResponseWriter.write(
+                                                exchange.getResponse(),
+                                                HttpStatus.UNAUTHORIZED,
+                                                "Invalid API key",
+                                                finalTraceId
+                                        );
+                                    }
+
+                                    List<String> roles = authResponse.getRoles();
+                                    HttpMethod method = exchange.getRequest().getMethod();
+
+                                    if (roles == null || roles.isEmpty()) {
+                                        return errorResponseWriter.write(
+                                                exchange.getResponse(),
+                                                HttpStatus.FORBIDDEN,
+                                                "User has no roles assigned",
+                                                finalTraceId
+                                        );
+                                    }
+
+                                    if (!routeRoleService.isAllowed(path, method, roles)) {
+                                        return errorResponseWriter.write(
+                                                exchange.getResponse(),
+                                                HttpStatus.FORBIDDEN,
+                                                "Access denied",
+                                                finalTraceId
+                                        );
+                                    }
+
+                                    String primaryRole = roles.get(0);
+
+                                    ServerHttpRequest mutatedRequest = exchange.getRequest()
+                                            .mutate()
+                                            .header(HeaderNames.AUTHENTICATED_USER, authResponse.getUsername())
+                                            .header(HeaderNames.USER_ROLE, primaryRole)
+                                            .header(HeaderNames.TRACE_ID, finalTraceId)
+                                            .build();
+
+                                    return chain.filter(exchange.mutate().request(mutatedRequest).build());
+                                });
+                    }
+
+                    // Ako auth vrati 401 -> ključ nije validan
+                    if (response.statusCode() == HttpStatus.UNAUTHORIZED) {
                         return errorResponseWriter.write(
                                 exchange.getResponse(),
                                 HttpStatus.UNAUTHORIZED,
                                 "Invalid API key",
-                                traceId
+                                finalTraceId
                         );
                     }
 
-                    List<String> roles = authResponse.getRoles();
-                    HttpMethod method = exchange.getRequest().getMethod();
-
-                    if (!routeRoleService.isAllowed(path, method, roles)) {
+                    // Ako auth vrati 403
+                    if (response.statusCode() == HttpStatus.FORBIDDEN) {
                         return errorResponseWriter.write(
                                 exchange.getResponse(),
                                 HttpStatus.FORBIDDEN,
-                                "Access denied",
-                                traceId
+                                "Authentication forbidden",
+                                finalTraceId
                         );
                     }
 
-                    String primaryRole = roles.get(0);
-
-                    ServerHttpRequest mutatedRequest = exchange.getRequest()
-                            .mutate()
-                            .header(HeaderNames.TRACE_ID, traceId)
-                            .header(HeaderNames.AUTHENTICATED_USER, authResponse.getUsername())
-                            .header(HeaderNames.USER_ROLE, primaryRole)
-                            .build();
-
-                    ServerWebExchange mutatedExchange = exchange.mutate()
-                            .request(mutatedRequest)
-                            .build();
-
-                    return chain.filter(mutatedExchange)
-                            .then(Mono.fromRunnable(() -> {
-                                long processingTime = System.currentTimeMillis() - startTime;
-                                mutatedExchange.getResponse().getHeaders()
-                                        .set(HeaderNames.PROCESSING_TIME, String.valueOf(processingTime));
-                                mutatedExchange.getResponse().getHeaders()
-                                        .set(HeaderNames.TRACE_ID, traceId);
-                            }));
+                    // Sve ostalo iz auth servisa tretiramo kao problem dostupnosti / interni problem
+                    return errorResponseWriter.write(
+                            exchange.getResponse(),
+                            HttpStatus.SERVICE_UNAVAILABLE,
+                            "Authentication service unavailable",
+                            finalTraceId
+                    );
                 })
+                // Ovo je SAMO za pravi pad auth servisa: connection refused, timeout, itd.
                 .onErrorResume(ex -> errorResponseWriter.write(
                         exchange.getResponse(),
                         HttpStatus.SERVICE_UNAVAILABLE,
                         "Authentication service unavailable",
-                        traceId
+                        finalTraceId
                 ));
-    }
-
-    private String resolveTraceId(ServerWebExchange exchange) {
-        String incomingTraceId = exchange.getRequest().getHeaders().getFirst(HeaderNames.TRACE_ID);
-        if (incomingTraceId == null || incomingTraceId.isBlank()) {
-            return UUID.randomUUID().toString();
-        }
-        return incomingTraceId;
     }
 
     @Override
