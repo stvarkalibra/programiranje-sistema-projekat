@@ -9,6 +9,7 @@ import org.example.finansije.repository.InvoiceRepository;
 import org.example.finansije.repository.PaymentMethodRepository;
 import org.example.finansije.repository.TransactionRepository;
 import org.example.finansije.request.TransactionRequest;
+import org.example.finansije.response.PaymentMethodStatsResponse;
 import org.example.finansije.response.TransactionResponse;
 import org.springframework.stereotype.Service;
 
@@ -98,5 +99,9 @@ public class TransactionService {
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
         transactionRepository.delete(transaction);
+    }
+
+    public List<PaymentMethodStatsResponse> getPaymentMethodStatistics() {
+        return transactionRepository.getPaymentMethodStatistics();
     }
 }

@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.example.rezervacije.enums.BookingStatus;
 import org.example.rezervacije.request.BookingRequest;
 import org.example.rezervacije.response.BookingResponse;
+import org.example.rezervacije.response.CancellationResponse;
+import org.example.rezervacije.response.GuestBookingStatsResponse;
 import org.example.rezervacije.service.BookingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -78,5 +80,23 @@ public class BookingController {
     @Operation(summary = "Ukupan iznos booking-a za guestId")
     public ResponseEntity<Double> sumTotalPriceByGuestId(@PathVariable Long guestId) {
         return ResponseEntity.ok(bookingService.sumTotalPriceByGuestId(guestId));
+    }
+
+    @GetMapping("/total-price/{bookingId}")
+    @Operation(summary = "Ukupan iznos booking-a")
+    public ResponseEntity<Double> getTotalPrice(@PathVariable Long bookingId) {
+        return ResponseEntity.ok(bookingService.getTotalPrice(bookingId));
+    }
+
+    @PutMapping("/{id}/cancel")
+    @Operation(summary = "Otkazivanje booking-a i obracun refundacije")
+    public ResponseEntity<CancellationResponse> cancelBooking(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.cancelBooking(id));
+    }
+
+    @GetMapping("/guest-booking-statistics")
+    @Operation(summary = "Slozeni upit nad bazom")
+    public ResponseEntity<List<GuestBookingStatsResponse>> getGuestBookingStats() {
+        return ResponseEntity.ok(bookingService.getGuestBookingStats());
     }
 }

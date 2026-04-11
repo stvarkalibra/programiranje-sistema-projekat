@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.finansije.enums.InvoiceStatus;
 import org.example.finansije.request.InvoiceRequest;
+import org.example.finansije.response.BookingResponse;
 import org.example.finansije.response.InvoiceResponse;
 import org.example.finansije.service.InvoiceService;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +53,7 @@ public class InvoiceController {
 
     @GetMapping("/booking/{bookingId}")
     @Operation(summary = "Pronalazak invoice-a po booking id-u")
-    public ResponseEntity<List<InvoiceResponse>> findByBookingId(@PathVariable Long bookingId) {
+    public ResponseEntity<InvoiceResponse> findByBookingId(@PathVariable Long bookingId) {
 
         return ResponseEntity.ok(invoiceService.findByBookingId(bookingId));
     }
@@ -72,5 +73,12 @@ public class InvoiceController {
 
         invoiceService.deleteById(id);
         return ResponseEntity.ok("Invoice deleted successfully.");
+    }
+
+    @PutMapping("/update-booking-status/{id}")
+    @Operation(summary = "Izmena statusa bookinga koji nije placen")
+    public void updateBookingStatus(@PathVariable Long id) {
+
+        invoiceService.updateBookingStatus(id);
     }
 }
