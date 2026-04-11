@@ -9,6 +9,8 @@
         <outputRelativeToContentRoot value="true" />
         <module name="guide-service" />
         <module name="avantura-service" />
+        <module name="rezervacije" />
+        <module name="finansije" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -20,6 +22,8 @@
       <module name="Avanture-service" options="-parameters" />
       <module name="avantura-service" options="-parameters" />
       <module name="guide-service" options="-parameters" />
+      <module name="finansije" options="-parameters" />
+      <module name="rezervacije" options="-parameters" />
     </option>
   </component>
 </project>
