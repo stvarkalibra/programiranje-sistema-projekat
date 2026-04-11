@@ -3,8 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/EcoTravelProject.iml" filepath="$PROJECT_DIR$/EcoTravelProject.iml" />
-      <module fileurl="file://$PROJECT_DIR$/avantura-service/avantura-service.iml" filepath="$PROJECT_DIR$/avantura-service/avantura-service.iml" />
-      <module fileurl="file://$PROJECT_DIR$/guide-service/guide-service.iml" filepath="$PROJECT_DIR$/guide-service/guide-service.iml" />
     </modules>
   </component>
 </project>
