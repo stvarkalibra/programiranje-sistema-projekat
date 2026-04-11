@@ -9,7 +9,9 @@ import org.raflab.avanturaservice.entityLayer.GearRequirement;
 import org.raflab.avanturaservice.repositoryLayer.AdventureRepository;
 import org.raflab.avanturaservice.repositoryLayer.GearRequirementRepository;
 import org.raflab.avanturaservice.utils.GearRequirementEntityMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,16 +26,19 @@ public class GearRequirementService {
 
     @Transactional
     public GearRequirementResponse createGearRequirement(GearRequirementRequest request) {
-        // 1. Validacija unosa
         validateGearRequest(request);
 
-        // 2. Provera postojanja avanture
         Adventure adventure = adventureRepository.findById(request.getAdventureId())
-                .orElseThrow(() -> new RuntimeException("Greška: Avantura sa ID " + request.getAdventureId() + " nije pronađena."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Avantura sa ID " + request.getAdventureId() + " nije pronađena."
+                ));
 
-        // 3. Provera duplikata (da ne dodajemo istu opremu istoj avanturi više puta)
         if (gearRepository.existsByItemNameAndAdventureId(request.getItemName(), request.getAdventureId())) {
-            throw new RuntimeException("Greška: Oprema '" + request.getItemName() + "' je već dodata za ovu avanturu.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Oprema '" + request.getItemName() + "' je već dodata za ovu avanturu."
+            );
         }
 
         GearRequirement gear = mapper.toEntity(request, adventure);
@@ -48,7 +53,11 @@ public class GearRequirementService {
 
     public GearRequirementResponse getGearRequirementById(Long id) {
         GearRequirement gear = gearRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Oprema ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Oprema ID " + id + " nije pronađena."
+                ));
+
         return mapper.toResponse(gear);
     }
 
@@ -57,13 +66,18 @@ public class GearRequirementService {
         validateGearRequest(request);
 
         GearRequirement existing = gearRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Oprema ID " + id + " ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Oprema ID " + id + " ne postoji."
+                ));
 
-        // Ako se menja avantura
         if (!existing.getAdventure().getId().equals(request.getAdventureId())) {
-            Adventure newAdv = adventureRepository.findById(request.getAdventureId())
-                    .orElseThrow(() -> new RuntimeException("Nova avantura nije pronađena."));
-            existing.setAdventure(newAdv);
+            Adventure newAdventure = adventureRepository.findById(request.getAdventureId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Nova avantura nije pronađena."
+                    ));
+            existing.setAdventure(newAdventure);
         }
 
         existing.setItemName(request.getItemName());
@@ -75,25 +89,51 @@ public class GearRequirementService {
     @Transactional
     public void deleteGearRequirement(Long id) {
         if (!gearRepository.existsById(id)) {
-            throw new RuntimeException("Brisanje neuspelo: Stavka opreme ne postoji.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Brisanje neuspelo: Stavka opreme ne postoji."
+            );
         }
+
         gearRepository.deleteById(id);
     }
 
-    // --- DODATNA VALIDACIJA ---
     private void validateGearRequest(GearRequirementRequest request) {
         if (request.getItemName() == null || request.getItemName().trim().isEmpty()) {
-            throw new RuntimeException("Greška: Naziv opreme ne sme biti prazan.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Naziv opreme ne sme biti prazan."
+            );
         }
-        // Primer poslovne logike: zabraniti nazive koji su samo brojevi
+
         if (request.getItemName().matches("-?\\d+(\\.\\d+)?")) {
-            throw new RuntimeException("Greška: Naziv opreme ne može biti samo broj.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Naziv opreme ne može biti samo broj."
+            );
+        }
+
+        if (request.getAdventureId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "ID avanture je obavezan."
+            );
+        }
+
+        if (request.getIsMandatory() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Polje isMandatory je obavezno."
+            );
         }
     }
 
     public String checkSafetyGearCompliance(Long adventureId) {
         Adventure adventure = adventureRepository.findById(adventureId)
-                .orElseThrow(() -> new RuntimeException("Avantura nije nađena."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Avantura nije nađena."
+                ));
 
         long mandatoryGearCount = gearRepository.findAll().stream()
                 .filter(g -> g.getAdventure().getId().equals(adventureId) && g.isMandatory())
@@ -102,23 +142,21 @@ public class GearRequirementService {
         if ("Extreme".equalsIgnoreCase(adventure.getDifficultyLevel()) && mandatoryGearCount < 3) {
             return "UPOZORENJE: Extreme avantura mora imati barem 3 stavke obavezne opreme! Trenutno: " + mandatoryGearCount;
         }
+
         return "Oprema je u skladu sa nivoom težine.";
     }
 
-    /**
-     * Metoda vrši matematičku kalkulaciju (prebrojavanje) obaveznih stavki opreme
-     * za specifičnu avanturu.
-     */
     public Long countMandatoryGear(Long adventureId) {
-        // Prvo proveravamo da li avantura postoji da ne bismo radili kalkulaciju nad nepostojećim ID-em
         if (!adventureRepository.existsById(adventureId)) {
-            throw new RuntimeException("Greška: Avantura sa ID " + adventureId + " nije pronađena.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Avantura sa ID " + adventureId + " nije pronađena."
+            );
         }
 
-        // Filtriramo svu opremu koja pripada toj avanturi i koja je označena kao obavezna
         return gearRepository.findAll().stream()
                 .filter(gear -> gear.getAdventure().getId().equals(adventureId))
-                .filter(gear -> gear.isMandatory()) // isMandatory mora biti true
-                .count(); // Vraća ukupan broj (Long)
+                .filter(GearRequirement::isMandatory)
+                .count();
     }
 }

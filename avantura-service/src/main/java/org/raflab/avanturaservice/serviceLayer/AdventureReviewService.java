@@ -7,9 +7,11 @@ import org.raflab.avanturaservice.dtoLayer.response.AdventureReviewResponse;
 import org.raflab.avanturaservice.entityLayer.Adventure;
 import org.raflab.avanturaservice.entityLayer.AdventureReview;
 import org.raflab.avanturaservice.repositoryLayer.AdventureRepository;
-import org.raflab.avanturaservice.utils.AdventureReviewEntityMapper;
-import org.springframework.stereotype.Service;
 import org.raflab.avanturaservice.repositoryLayer.AdventureReviewRepository;
+import org.raflab.avanturaservice.utils.AdventureReviewEntityMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,12 +26,13 @@ public class AdventureReviewService {
 
     @Transactional
     public AdventureReviewResponse createAdventureReview(AdventureReviewRequest request) {
-        // 1. Logička provera ocene (Mora biti između 1 i 5)
         validateRating(request.getRating());
 
-        // 2. Logička provera: Da li avantura postoji
         Adventure adventure = adventureRepository.findById(request.getAdventureId())
-                .orElseThrow(() -> new RuntimeException("Greška: Avantura sa ID " + request.getAdventureId() + " nije pronađena."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Avantura sa ID " + request.getAdventureId() + " nije pronađena."
+                ));
 
         AdventureReview review = mapper.toEntity(request, adventure);
         return mapper.toResponse(reviewRepository.save(review));
@@ -43,23 +46,31 @@ public class AdventureReviewService {
 
     public AdventureReviewResponse getAdventureReviewById(Long id) {
         AdventureReview review = reviewRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Recenzija ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Recenzija ID " + id + " nije pronađena."
+                ));
+
         return mapper.toResponse(review);
     }
 
     @Transactional
     public AdventureReviewResponse updateAdventureReview(Long id, AdventureReviewRequest request) {
-        // 1. Logička provera ocene
         validateRating(request.getRating());
 
         AdventureReview existing = reviewRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Recenzija ID " + id + " ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Recenzija ID " + id + " ne postoji."
+                ));
 
-        // 2. Logička kontrola: Ako se menja avantura, proveri novu
         if (!existing.getAdventure().getId().equals(request.getAdventureId())) {
-            Adventure newAdv = adventureRepository.findById(request.getAdventureId())
-                    .orElseThrow(() -> new RuntimeException("Nova avantura nije pronađena."));
-            existing.setAdventure(newAdv);
+            Adventure newAdventure = adventureRepository.findById(request.getAdventureId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Nova avantura nije pronađena."
+                    ));
+            existing.setAdventure(newAdventure);
         }
 
         existing.setRating(request.getRating());
@@ -71,27 +82,45 @@ public class AdventureReviewService {
     @Transactional
     public void deleteAdventureReview(Long id) {
         if (!reviewRepository.existsById(id)) {
-            throw new RuntimeException("Brisanje neuspelo: Recenzija ne postoji.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Brisanje neuspelo: Recenzija ne postoji."
+            );
         }
+
         reviewRepository.deleteById(id);
     }
 
-    // Privatna pomoćna metoda za validaciju ocene (da ne ponavljamo kod)
     private void validateRating(Integer rating) {
         if (rating == null || rating < 1 || rating > 5) {
-            throw new RuntimeException("Greška: Ocena mora biti ceo broj u opsegu od 1 do 5.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Ocena mora biti ceo broj u opsegu od 1 do 5."
+            );
         }
     }
 
     public String getAdventureRatingStats(Long adventureId) {
+        if (!adventureRepository.existsById(adventureId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Avantura sa ID " + adventureId + " nije pronađena."
+            );
+        }
+
         List<AdventureReview> reviews = reviewRepository.findAll().stream()
                 .filter(r -> r.getAdventure().getId().equals(adventureId))
                 .collect(Collectors.toList());
 
-        if (reviews.isEmpty()) return "Avantura još uvek nema ocena.";
+        if (reviews.isEmpty()) {
+            return "Avantura još uvek nema ocena.";
+        }
 
-        double average = reviews.stream().mapToInt(AdventureReview::getRating).average().orElse(0.0);
+        double average = reviews.stream()
+                .mapToInt(AdventureReview::getRating)
+                .average()
+                .orElse(0.0);
+
         return String.format("Avantura ima %d recenzija sa prosečnom ocenom %.2f", reviews.size(), average);
     }
-
 }

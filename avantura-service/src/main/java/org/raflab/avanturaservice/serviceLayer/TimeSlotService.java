@@ -7,9 +7,11 @@ import org.raflab.avanturaservice.dtoLayer.response.TimeSlotResponse;
 import org.raflab.avanturaservice.entityLayer.Adventure;
 import org.raflab.avanturaservice.entityLayer.TimeSlot;
 import org.raflab.avanturaservice.repositoryLayer.AdventureRepository;
-import org.raflab.avanturaservice.utils.TimeSlotEntityMapper;
-import org.springframework.stereotype.Service;
 import org.raflab.avanturaservice.repositoryLayer.TimeSlotRepository;
+import org.raflab.avanturaservice.utils.TimeSlotEntityMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,12 +27,13 @@ public class TimeSlotService {
 
     @Transactional
     public TimeSlotResponse createTimeSlot(TimeSlotRequest request) {
-        // 1. Logička provera vremena (VRLO BITNO)
         validateTimeLogic(request.getStartTime(), request.getEndTime());
 
-        // 2. Provera avanture
         Adventure adventure = adventureRepository.findById(request.getAdventureId())
-                .orElseThrow(() -> new RuntimeException("Greška: Avantura nije pronađena."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Avantura nije pronađena."
+                ));
 
         TimeSlot timeSlot = mapper.toEntity(request, adventure);
         return mapper.toResponse(timeSlotRepository.save(timeSlot));
@@ -45,7 +48,10 @@ public class TimeSlotService {
     public TimeSlotResponse getTimeSlotById(Long id) {
         return timeSlotRepository.findById(id)
                 .map(mapper::toResponse)
-                .orElseThrow(() -> new RuntimeException("Termin ID " + id + " nije pronađen."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Termin ID " + id + " nije pronađen."
+                ));
     }
 
     @Transactional
@@ -53,11 +59,16 @@ public class TimeSlotService {
         validateTimeLogic(request.getStartTime(), request.getEndTime());
 
         TimeSlot existing = timeSlotRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Termin ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Termin ne postoji."
+                ));
 
-        // Provera da li već ima prijavljenih ljudi - ako ima, ne smemo smanjiti kapacitet ispod tog broja
         if (request.getMaxParticipants() < existing.getCurrentOccupancy()) {
-            throw new RuntimeException("Greška: Maksimalan broj učesnika ne može biti manji od trenutno prijavljenih (" + existing.getCurrentOccupancy() + ").");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Maksimalan broj učesnika ne može biti manji od trenutno prijavljenih (" + existing.getCurrentOccupancy() + ")."
+            );
         }
 
         existing.setStartTime(request.getStartTime());
@@ -70,37 +81,57 @@ public class TimeSlotService {
     @Transactional
     public void deleteTimeSlot(Long id) {
         TimeSlot slot = timeSlotRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Termin nije pronađen."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Termin nije pronađen."
+                ));
 
-        // Logička kontrola: Ne briši termin koji već ima prijavljene ljude
         if (slot.getCurrentOccupancy() > 0) {
-            throw new RuntimeException("Greška: Ne možete obrisati termin u kojem već ima prijavljenih učesnika.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Ne možete obrisati termin u kojem već ima prijavljenih učesnika."
+            );
         }
 
         timeSlotRepository.deleteById(id);
     }
 
-    // --- LOGIČKA VALIDACIJA VREMENA ---
     private void validateTimeLogic(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null) {
-            throw new RuntimeException("Greška: Vremena početka i završetka moraju biti definisana.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Vremena početka i završetka moraju biti definisana."
+            );
         }
+
         if (end.isBefore(start) || end.isEqual(start)) {
-            throw new RuntimeException("Greška: Vreme završetka mora biti nakon vremena početka.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Vreme završetka mora biti nakon vremena početka."
+            );
         }
-        // Minimalno trajanje avanture 30 minuta
+
         if (java.time.Duration.between(start, end).toMinutes() < 30) {
-            throw new RuntimeException("Greška: Avantura ne može trajati kraće od 30 minuta.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Avantura ne može trajati kraće od 30 minuta."
+            );
         }
     }
 
     @Transactional
     public void bookSpotInTimeSlot(Long slotId) {
         TimeSlot slot = timeSlotRepository.findById(slotId)
-                .orElseThrow(() -> new RuntimeException("Greška: Termin nije pronađen."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Termin nije pronađen."
+                ));
 
         if (slot.getCurrentOccupancy() >= slot.getMaxParticipants()) {
-            throw new RuntimeException("Greška: Nema više slobodnih mesta u ovom terminu (" + slot.getMaxParticipants() + " max).");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Nema više slobodnih mesta u ovom terminu (" + slot.getMaxParticipants() + " max)."
+            );
         }
 
         slot.setCurrentOccupancy(slot.getCurrentOccupancy() + 1);
@@ -114,5 +145,4 @@ public class TimeSlotService {
                 .map(mapper::toResponse)
                 .collect(Collectors.toList());
     }
-
 }
