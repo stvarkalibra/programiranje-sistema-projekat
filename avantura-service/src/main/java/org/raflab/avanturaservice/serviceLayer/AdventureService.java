@@ -8,11 +8,12 @@ import org.raflab.avanturaservice.entityLayer.AdventureCategory;
 import org.raflab.avanturaservice.repositoryLayer.AdventureCategoryRepository;
 import org.raflab.avanturaservice.repositoryLayer.AdventureRepository;
 import org.raflab.avanturaservice.utils.AdventureEntityMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,21 +24,26 @@ public class AdventureService {
     private final AdventureCategoryRepository categoryRepository;
     private final AdventureEntityMapper adventureEntityMapper;
 
-    // CREATE - Potpuno kontrolisan unos
     @Transactional
     public AdventureResponse createAdventure(AdventureRequest request) {
-        // 1. Provera postojanja kategorije (Referentni integritet)
         AdventureCategory category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Greška: Kategorija sa ID " + request.getCategoryId() + " nije pronađena."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Kategorija sa ID " + request.getCategoryId() + " nije pronađena."
+                ));
 
-        // 2. Provera logičkog integriteta: Duplikat naslova
         if (adventureRepository.existsByTitle(request.getTitle())) {
-            throw new RuntimeException("Greška: Avantura sa naslovom '" + request.getTitle() + "' već postoji.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Avantura sa naslovom '" + request.getTitle() + "' već postoji."
+            );
         }
 
-        // 3. Poslovna logika: Primer - Extreme avanture ne mogu biti jeftine
         if ("Extreme".equalsIgnoreCase(request.getDifficultyLevel()) && request.getBasePrice() < 150.0) {
-            throw new RuntimeException("Greška: Avanture sa nivoom 'Extreme' moraju imati bazičnu cenu od minimalno 150.0.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Avanture sa nivoom 'Extreme' moraju imati bazičnu cenu od minimalno 150.0."
+            );
         }
 
         Adventure adventure = adventureEntityMapper.toEntity(request, category);
@@ -45,39 +51,47 @@ public class AdventureService {
         return adventureEntityMapper.toResponse(saved);
     }
 
-    // READ ALL
     public List<AdventureResponse> getAllAdventures() {
         return adventureRepository.findAll().stream()
                 .map(adventureEntityMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    // READ ONE
     public AdventureResponse getAdventureById(Long id) {
         return adventureRepository.findById(id)
                 .map(adventureEntityMapper::toResponse)
-                .orElseThrow(() -> new RuntimeException("Greška: Avantura sa ID " + id + " ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Avantura sa ID " + id + " ne postoji."
+                ));
     }
 
-    // UPDATE - Kontrolisana izmena
     @Transactional
     public AdventureResponse updateAdventure(Long id, AdventureRequest request) {
-        // 1. Provera da li entitet uopšte postoji
         Adventure existing = adventureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Greška: Izmena nemoguća, avantura sa ID " + id + " ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Izmena nemoguća, avantura sa ID " + id + " ne postoji."
+                ));
 
-        // 2. Provera kategorije
         AdventureCategory category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Greška: Kategorija nije pronađena."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Kategorija nije pronađena."
+                ));
 
-        // 3. Provera duplikata naslova (ako se naslov menja, proveri da li novi već zauzet)
         if (!existing.getTitle().equals(request.getTitle()) && adventureRepository.existsByTitle(request.getTitle())) {
-            throw new RuntimeException("Greška: Naslov '" + request.getTitle() + "' je već zauzet od strane druge avanture.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Naslov '" + request.getTitle() + "' je već zauzet od strane druge avanture."
+            );
         }
 
-        // 4. Ponovna validacija poslovne logike cene
         if ("Extreme".equalsIgnoreCase(request.getDifficultyLevel()) && request.getBasePrice() < 150.0) {
-            throw new RuntimeException("Greška: Nije moguće postaviti cenu ispod 150.0 za Extreme nivo.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Nije moguće postaviti cenu ispod 150.0 za Extreme nivo."
+            );
         }
 
         existing.setTitle(request.getTitle());
@@ -89,58 +103,84 @@ public class AdventureService {
         return adventureEntityMapper.toResponse(adventureRepository.save(existing));
     }
 
-    // DELETE
     @Transactional
     public void deleteAdventure(Long id) {
-        // Provera pre brisanja sprečava neočekivane SQL greške
         if (!adventureRepository.existsById(id)) {
-            throw new RuntimeException("Greška: Brisanje neuspelo, avantura sa ID " + id + " nije u bazi.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Brisanje neuspelo, avantura sa ID " + id + " nije u bazi."
+            );
         }
         adventureRepository.deleteById(id);
     }
 
     public Double calculateAdventurePrice(Long id, Double discountPercentage) {
-        if (discountPercentage < 0 || discountPercentage > 100) {
-            throw new RuntimeException("Greška: Popust mora biti između 0 i 100%.");
+        if (discountPercentage == null || discountPercentage < 0 || discountPercentage > 100) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Popust mora biti između 0 i 100%."
+            );
         }
-        Adventure a = adventureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Greška: Avantura nije nađena."));
 
-        double discountedPrice = a.getBasePrice() * (1 - discountPercentage / 100);
-        return discountedPrice;
+        Adventure adventure = adventureRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Avantura nije nađena."
+                ));
+
+        return adventure.getBasePrice() * (1 - discountPercentage / 100);
     }
 
     public List<AdventureResponse> filterAdventures(Long categoryId, Double maxPrice, String difficulty) {
         return adventureRepository.findAll().stream()
-                .filter(a -> (categoryId == null || a.getAdventureCategory().getId().equals(categoryId)))
-                .filter(a -> (maxPrice == null || a.getBasePrice() <= maxPrice))
-                .filter(a -> (difficulty == null || a.getDifficultyLevel().equalsIgnoreCase(difficulty)))
+                .filter(a -> categoryId == null || a.getAdventureCategory().getId().equals(categoryId))
+                .filter(a -> maxPrice == null || a.getBasePrice() <= maxPrice)
+                .filter(a -> difficulty == null || a.getDifficultyLevel().equalsIgnoreCase(difficulty))
                 .map(adventureEntityMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    // 1. Metoda: Premium avanture (Filter na strani drugog servisa)
     public List<AdventureResponse> getPremiumAdventures(Long guideId, Double minPrice) {
+        if (guideId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guide ID je obavezan.");
+        }
+        if (minPrice == null || minPrice < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Minimalna cena mora biti 0 ili veća.");
+        }
+
         return adventureRepository.findByGuideId(guideId).stream()
                 .filter(a -> a.getBasePrice() >= minPrice)
                 .map(adventureEntityMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    // 2. Metoda: Ukupan prihod (Agregacija)
     public Double getTotalGuideRevenue(Long guideId) {
+        if (guideId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guide ID je obavezan.");
+        }
+
         return adventureRepository.findByGuideId(guideId).stream()
                 .mapToDouble(Adventure::getBasePrice)
                 .sum();
     }
 
-    // 3. Metoda: Overload (Logička provera)
     public Boolean isGuideOverloaded(Long guideId) {
-        // Overload je ako ima više od 3 avanture
+        if (guideId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guide ID je obavezan.");
+        }
+
         return adventureRepository.findByGuideId(guideId).size() > 3;
     }
 
     public List<AdventureResponse> getAdventuresByCategory(Long categoryId) {
+        if (categoryId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category ID je obavezan.");
+        }
+
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Kategorija sa ID " + categoryId + " ne postoji.");
+        }
+
         return adventureRepository.findByCategoryId(categoryId).stream()
                 .map(adventureEntityMapper::toResponse)
                 .collect(Collectors.toList());
