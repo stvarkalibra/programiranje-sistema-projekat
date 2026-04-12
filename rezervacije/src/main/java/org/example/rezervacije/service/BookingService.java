@@ -8,7 +8,11 @@ import org.example.rezervacije.entity.CancellationPolicy;
 import org.example.rezervacije.entity.Guest;
 import org.example.rezervacije.enums.BookingStatus;
 import org.example.rezervacije.factory.RefundStrategyFactory;
-import org.example.rezervacije.repository.*;
+import org.example.rezervacije.repository.AddOnItemRepository;
+import org.example.rezervacije.repository.BookingRepository;
+import org.example.rezervacije.repository.BookingStatusLogRepository;
+import org.example.rezervacije.repository.CancellationPolicyRepository;
+import org.example.rezervacije.repository.GuestRepository;
 import org.example.rezervacije.request.BookingRequest;
 import org.example.rezervacije.response.BookingResponse;
 import org.example.rezervacije.response.CancellationResponse;
@@ -35,15 +39,19 @@ public class BookingService {
     private final BookingStatusLogRepository bookingStatusLogRepository;
 
     public BookingResponse save(BookingRequest request) {
-
         Guest guest = guestRepository.findById(request.getGuestId())
-                .orElseThrow(() -> new RuntimeException("Guest not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Guest not found"
+                ));
 
         CancellationPolicy policy = policyRepository.findById(request.getPolicyId())
-                .orElseThrow(() -> new RuntimeException("Policy not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Policy not found"
+                ));
 
         Booking booking = BookingConverter.toEntity(request, guest, policy);
-
         Booking saved = bookingRepository.save(booking);
 
         BookingStatusLog log = new BookingStatusLog();
@@ -58,7 +66,6 @@ public class BookingService {
     }
 
     public List<BookingResponse> findAll() {
-
         return bookingRepository.findAll()
                 .stream()
                 .map(BookingConverter::toResponse)
@@ -66,7 +73,6 @@ public class BookingService {
     }
 
     public BookingResponse findById(Long id) {
-
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
@@ -77,7 +83,6 @@ public class BookingService {
     }
 
     public List<BookingResponse> findByStatus(BookingStatus status) {
-
         return bookingRepository.findByStatus(status)
                 .stream()
                 .map(BookingConverter::toResponse)
@@ -85,7 +90,6 @@ public class BookingService {
     }
 
     public List<BookingResponse> findByGuestId(Long guestId) {
-
         return bookingRepository.findByGuestId(guestId)
                 .stream()
                 .map(BookingConverter::toResponse)
@@ -93,18 +97,25 @@ public class BookingService {
     }
 
     public BookingResponse update(Long id, BookingRequest request) {
-
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Booking not found"
+                ));
 
         Guest guest = guestRepository.findById(request.getGuestId())
-                .orElseThrow(() -> new RuntimeException("Guest not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Guest not found"
+                ));
 
         CancellationPolicy policy = policyRepository.findById(request.getPolicyId())
-                .orElseThrow(() -> new RuntimeException("Policy not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Policy not found"
+                ));
 
         BookingStatusLog log = new BookingStatusLog();
-
         log.setOldStatus(booking.getStatus());
 
         booking.setGuest(guest);
@@ -116,25 +127,26 @@ public class BookingService {
         booking.setStatus(request.getStatus());
 
         Booking updated = bookingRepository.save(booking);
+
         log.setBooking(booking);
         log.setNewStatus(booking.getStatus());
         log.setChangedAt(LocalDateTime.now());
-
         bookingStatusLogRepository.save(log);
 
         return BookingConverter.toResponse(updated);
     }
 
     public void deleteById(Long id) {
-
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Booking not found"
+                ));
 
         bookingRepository.delete(booking);
     }
 
     public double sumTotalPriceByGuestId(Long guestId) {
-
         return bookingRepository.findByGuestId(guestId)
                 .stream()
                 .mapToDouble(Booking::getTotalPrice)
@@ -143,7 +155,10 @@ public class BookingService {
 
     public double getTotalPrice(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Booking not found"
+                ));
 
         double bookingPrice = booking.getTotalPrice();
         double addOnItemsPrice = addOnItemRepository.sumPriceByBookingId(bookingId);
@@ -153,18 +168,30 @@ public class BookingService {
 
     public CancellationResponse cancelBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Booking not found"
+                ));
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new RuntimeException("Booking is already cancelled");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Booking is already cancelled"
+            );
         }
 
         if (booking.getStatus() == BookingStatus.COMPLETED) {
-            throw new RuntimeException("Completed booking cannot be cancelled");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Completed booking cannot be cancelled"
+            );
         }
 
         if (booking.getStartDate().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Booking already started and cannot be cancelled");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Booking already started and cannot be cancelled"
+            );
         }
 
         BookingStatus oldStatus = booking.getStatus();
@@ -184,7 +211,6 @@ public class BookingService {
         log.setChangedAt(LocalDateTime.now());
 
         bookingStatusLogRepository.save(log);
-
         bookingRepository.save(booking);
 
         return new CancellationResponse(

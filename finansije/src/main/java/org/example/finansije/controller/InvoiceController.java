@@ -54,7 +54,6 @@ public class InvoiceController {
     @GetMapping("/booking/{bookingId}")
     @Operation(summary = "Pronalazak invoice-a po booking id-u")
     public ResponseEntity<InvoiceResponse> findByBookingId(@PathVariable Long bookingId) {
-
         return ResponseEntity.ok(invoiceService.findByBookingId(bookingId));
     }
 

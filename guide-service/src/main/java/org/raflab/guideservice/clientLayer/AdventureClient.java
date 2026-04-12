@@ -1,16 +1,22 @@
 package org.raflab.guideservice.clientLayer;
 
+import org.raflab.guideservice.config.FeignRequestInterceptorConfig;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
-@FeignClient(name = "avantura-service", url = "http://localhost:8081/api/adventures")
+@FeignClient(
+        name = "avantura-service",
+        url = "http://localhost:8081/api/adventures",
+        configuration = FeignRequestInterceptorConfig.class
+)
 public interface AdventureClient {
 
     @GetMapping("/guide/{guideId}/premium")
-    List<RemoteAdventureDTO> getPremiumAdventures(@PathVariable("guideId") Long guideId, @RequestParam("minPrice") Double minPrice);
+    List<RemoteAdventureDTO> getPremiumAdventures(
+            @PathVariable("guideId") Long guideId,
+            @RequestParam("minPrice") Double minPrice);
 
     @GetMapping("/guide/{guideId}/revenue")
     Double getGuideRevenue(@PathVariable("guideId") Long guideId);

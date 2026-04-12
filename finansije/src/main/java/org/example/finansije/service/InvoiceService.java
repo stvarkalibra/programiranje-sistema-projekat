@@ -10,6 +10,7 @@ import org.example.finansije.converter.InvoiceConverter;
 import org.example.finansije.entity.Invoice;
 import org.example.finansije.entity.TaxRate;
 import org.example.finansije.enums.InvoiceStatus;
+import org.example.finansije.exception.NotFoundException;
 import org.example.finansije.repository.InvoiceRepository;
 import org.example.finansije.repository.TaxRateRepository;
 import org.example.finansije.request.InvoiceRequest;
@@ -29,13 +30,11 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final TaxRateRepository taxRateRepository;
-
     private final ReservationClient reservationClient;
 
     @Retry(name = "reservationServiceRetry", fallbackMethod = "saveFallback")
     @CircuitBreaker(name = "reservationServiceCB", fallbackMethod = "saveFallback")
     public InvoiceResponse save(InvoiceRequest request) {
-
         validateInvoiceRequest(request);
 
         BookingResponse bookingResponse = getExistingBooking(request.getBookingId());
@@ -49,7 +48,7 @@ public class InvoiceService {
         }
 
         TaxRate taxRate = taxRateRepository.findById(request.getTaxRateId())
-                .orElseThrow(() -> new IllegalArgumentException("TaxRate not found"));
+                .orElseThrow(() -> new NotFoundException("TaxRate not found"));
 
         validateInvoiceAmounts(request, taxRate);
 
@@ -70,7 +69,6 @@ public class InvoiceService {
     }
 
     public List<InvoiceResponse> findAll() {
-
         return invoiceRepository.findAll()
                 .stream()
                 .map(InvoiceConverter::toResponse)
@@ -78,15 +76,13 @@ public class InvoiceService {
     }
 
     public InvoiceResponse findById(Long id) {
-
         Invoice invoice = invoiceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+                .orElseThrow(() -> new NotFoundException("Invoice not found"));
 
         return InvoiceConverter.toResponse(invoice);
     }
 
     public List<InvoiceResponse> findByStatus(InvoiceStatus status) {
-
         return invoiceRepository.findByStatus(status)
                 .stream()
                 .map(InvoiceConverter::toResponse)
@@ -94,16 +90,17 @@ public class InvoiceService {
     }
 
     public InvoiceResponse findByBookingId(Long bookingId) {
+        Invoice invoice = invoiceRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new NotFoundException("Invoice not found"));
 
-        return InvoiceConverter.toResponse(invoiceRepository.findByBookingId(bookingId).orElseThrow(() -> new RuntimeException("Invoice not found")));
+        return InvoiceConverter.toResponse(invoice);
     }
 
     @Retry(name = "reservationServiceRetry", fallbackMethod = "updateFallback")
     @CircuitBreaker(name = "reservationServiceCB", fallbackMethod = "updateFallback")
     public InvoiceResponse update(Long id, InvoiceRequest request) {
-
         Invoice invoice = invoiceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+                .orElseThrow(() -> new NotFoundException("Invoice not found"));
 
         validateInvoiceRequest(request);
 
@@ -123,7 +120,7 @@ public class InvoiceService {
         }
 
         TaxRate taxRate = taxRateRepository.findById(request.getTaxRateId())
-                .orElseThrow(() -> new RuntimeException("TaxRate not found"));
+                .orElseThrow(() -> new NotFoundException("TaxRate not found"));
 
         validateInvoiceAmounts(request, taxRate);
 
@@ -138,9 +135,8 @@ public class InvoiceService {
     }
 
     public void deleteById(Long id) {
-
         Invoice invoice = invoiceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+                .orElseThrow(() -> new NotFoundException("Invoice not found"));
 
         if (invoice.getStatus() == InvoiceStatus.PAID) {
             throw new IllegalArgumentException("Paid invoice cannot be deleted.");
@@ -151,9 +147,8 @@ public class InvoiceService {
 
     @CircuitBreaker(name = "reservationServiceCB", fallbackMethod = "updateBookingStatusFallback")
     public void updateBookingStatus(Long bookingId) {
-
         Invoice invoice = invoiceRepository.findByBookingId(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Invoice not found"));
+                .orElseThrow(() -> new NotFoundException("Invoice not found"));
 
         BookingResponse bookingResponse = getExistingBooking(bookingId);
 
@@ -167,8 +162,6 @@ public class InvoiceService {
 
         reservationClient.updateBookingStatus(bookingId, bookingResponse);
     }
-
-    //Validate metode
 
     private void validateInvoiceRequest(InvoiceRequest request) {
         if (request == null) {
@@ -211,7 +204,7 @@ public class InvoiceService {
         try {
             return reservationClient.findById(bookingId);
         } catch (FeignException.NotFound e) {
-            throw new IllegalArgumentException("Booking with id " + bookingId + " does not exist.");
+            throw new NotFoundException("Booking with id " + bookingId + " does not exist.");
         }
     }
 
@@ -219,13 +212,15 @@ public class InvoiceService {
         try {
             return reservationClient.getTotalPrice(bookingId);
         } catch (FeignException.NotFound e) {
-            throw new IllegalArgumentException("Booking with id " + bookingId + " does not exist.");
+            throw new NotFoundException("Booking with id " + bookingId + " does not exist.");
         }
     }
 
-    //Fallback metode
-
     private InvoiceResponse saveFallback(InvoiceRequest request, IllegalArgumentException e) {
+        throw e;
+    }
+
+    private InvoiceResponse saveFallback(InvoiceRequest request, NotFoundException e) {
         throw e;
     }
 
@@ -255,6 +250,10 @@ public class InvoiceService {
             throw e;
         }
 
+        if (t instanceof NotFoundException e) {
+            throw e;
+        }
+
         if (t instanceof CallNotPermittedException) {
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
@@ -277,6 +276,10 @@ public class InvoiceService {
 
     private void updateBookingStatusFallback(Long bookingId, Throwable t) {
         if (t instanceof IllegalArgumentException e) {
+            throw e;
+        }
+
+        if (t instanceof NotFoundException e) {
             throw e;
         }
 
