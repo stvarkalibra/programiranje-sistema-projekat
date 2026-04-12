@@ -14,6 +14,6 @@ INSERT INTO add_on_item (booking_id, service_name, price) VALUES (1, 'Breakfast'
 INSERT INTO add_on_item (booking_id, service_name, price) VALUES (1, 'Parking', 10.00);
 INSERT INTO add_on_item (booking_id, service_name, price) VALUES (2, 'Airport transfer', 40.00);
 
-INSERT INTO booking_status_log (booking_id, old_status, new_status, changed_at) VALUES (1, 'PENDING', 'CONFIRMED', TIMESTAMP '2026-05-01 10:00:00');
+INSERT INTO booking_status_log (booking_id, old_status, new_status, changed_at) VALUES (1, 'PENDING', 'COMPLETED', TIMESTAMP '2026-05-01 10:00:00');
 INSERT INTO booking_status_log (booking_id, old_status, new_status, changed_at) VALUES (2, 'PENDING', 'PENDING', TIMESTAMP '2026-05-02 12:00:00');
-INSERT INTO booking_status_log (booking_id, old_status, new_status, changed_at) VALUES (3, 'PENDING', 'CONFIRMED', TIMESTAMP '2026-05-03 15:30:00');
+INSERT INTO booking_status_log (booking_id, old_status, new_status, changed_at) VALUES (3, 'PENDING', 'COMPLETED', TIMESTAMP '2026-05-03 15:30:00');
