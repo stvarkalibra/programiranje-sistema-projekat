@@ -8,7 +8,9 @@ import org.example.rezervacije.repository.BookingRepository;
 import org.example.rezervacije.repository.BookingStatusLogRepository;
 import org.example.rezervacije.request.BookingStatusLogRequest;
 import org.example.rezervacije.response.BookingStatusLogResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,10 +24,12 @@ public class BookingStatusLogService {
 
     public BookingStatusLogResponse save(BookingStatusLogRequest request) {
         Booking booking = bookingRepository.findById(request.getBookingId())
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Booking not found"
+                ));
 
         BookingStatusLog statusLog = BookingStatusLogConverter.toEntity(request, booking);
-
         BookingStatusLog saved = bookingStatusLogRepository.save(statusLog);
 
         return BookingStatusLogConverter.toResponse(saved);
@@ -40,7 +44,10 @@ public class BookingStatusLogService {
 
     public BookingStatusLogResponse findById(Long id) {
         BookingStatusLog bookingStatusLog = bookingStatusLogRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("BookingStatusLog not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "BookingStatusLog not found"
+                ));
 
         return BookingStatusLogConverter.toResponse(bookingStatusLog);
     }
@@ -54,10 +61,16 @@ public class BookingStatusLogService {
 
     public BookingStatusLogResponse update(Long id, BookingStatusLogRequest request) {
         BookingStatusLog bookingStatusLog = bookingStatusLogRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("BookingStatusLog not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "BookingStatusLog not found"
+                ));
 
         Booking booking = bookingRepository.findById(request.getBookingId())
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Booking not found"
+                ));
 
         bookingStatusLog.setBooking(booking);
         bookingStatusLog.setOldStatus(request.getOldStatus());
@@ -65,13 +78,15 @@ public class BookingStatusLogService {
         bookingStatusLog.setChangedAt(request.getChangedAt());
 
         BookingStatusLog updated = bookingStatusLogRepository.save(bookingStatusLog);
-
         return BookingStatusLogConverter.toResponse(updated);
     }
 
     public void deleteById(Long id) {
         BookingStatusLog bookingStatusLog = bookingStatusLogRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("BookingStatusLog not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "BookingStatusLog not found"
+                ));
 
         bookingStatusLogRepository.delete(bookingStatusLog);
     }

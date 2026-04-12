@@ -2,6 +2,7 @@ package org.raflab.avanturaservice.controllerLayer;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.raflab.avanturaservice.dtoLayer.request.AdventureRequest;
@@ -12,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/adventures")
@@ -21,8 +21,6 @@ import java.util.Map;
 public class AdventureController {
 
     private final AdventureService adventureService;
-
-    // --- OSNOVNI CRUD (5 endpointa) ---
 
     @Operation(summary = "Prikaz svih avantura")
     @GetMapping
@@ -55,7 +53,6 @@ public class AdventureController {
         return ResponseEntity.noContent().build();
     }
 
-    // Dodaj u AdventureController
     @Operation(summary = "Izračunaj finalnu cenu sa popustom i PDV-om [MATEMATIKA]")
     @GetMapping("/{id}/calculate-price")
     public ResponseEntity<Double> calculatePrice(@PathVariable Long id, @RequestParam Double discount) {
@@ -81,13 +78,21 @@ public class AdventureController {
 
     @Operation(summary = "Izračunavanje ukupne sume svih osnovnih cena (basePrice) za sve ture jednog vodiča (OPENFEIGN)")
     @GetMapping("/guide/{guideId}/revenue")
-    public ResponseEntity<Double> getRevenue(@PathVariable Long guideId) {
+    public ResponseEntity<Double> getRevenue(@PathVariable Long guideId, HttpServletRequest request) {
+        System.out.println("TRACE ID = " + request.getHeader("X-Trace-Id"));
+        System.out.println("USER = " + request.getHeader("X-Authenticated-User"));
+        System.out.println("ROLE = " + request.getHeader("X-User-Role"));
+        System.out.println("API KEY = " + request.getHeader("X-API-KEY"));
         return ResponseEntity.ok(adventureService.getTotalGuideRevenue(guideId));
     }
 
     @Operation(summary = "Logička provera opterećenja vodiča na osnovu broja aktivnih tura u bazi (OPENFEIGN)")
     @GetMapping("/guide/{guideId}/check-overload")
-    public ResponseEntity<Boolean> checkOverload(@PathVariable Long guideId) {
+    public ResponseEntity<Boolean> checkOverload(@PathVariable Long guideId, HttpServletRequest request) {
+        System.out.println("TRACE ID = " + request.getHeader("X-Trace-Id"));
+        System.out.println("USER = " + request.getHeader("X-Authenticated-User"));
+        System.out.println("ROLE = " + request.getHeader("X-User-Role"));
+        System.out.println("API KEY = " + request.getHeader("X-API-KEY"));
         return ResponseEntity.ok(adventureService.isGuideOverloaded(guideId));
     }
 

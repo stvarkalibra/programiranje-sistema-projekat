@@ -1,15 +1,17 @@
 package org.example.finansije.client;
 
-import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.example.finansije.config.FeignRequestInterceptorConfig;
 import org.example.finansije.response.BookingResponse;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "rezervacije", url = "http://localhost:8083")
+@FeignClient(
+        name = "rezervacije",
+        url = "http://localhost:8083",
+        configuration = FeignRequestInterceptorConfig.class
+)
 public interface ReservationClient {
+
     @GetMapping("/api/bookings/{id}")
     BookingResponse findById(@PathVariable Long id);
 
@@ -17,5 +19,7 @@ public interface ReservationClient {
     Double getTotalPrice(@PathVariable Long id);
 
     @PutMapping("/api/bookings/{id}")
-    BookingResponse updateBookingStatus(@PathVariable Long id, @Valid @RequestBody BookingResponse bookingResponse);
+    BookingResponse updateBookingStatus(
+            @PathVariable Long id,
+            @RequestBody BookingResponse bookingResponse);
 }
