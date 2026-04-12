@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class GuideProfileService implements AdventureFacade { // Implementira Fasadu bez brisanja ičega
+public class GuideProfileService implements AdventureFacade {
 
     private final GuideProfileRepository guideRepository;
     private final GuideProfileEntityMapper mapper;
@@ -34,13 +34,15 @@ public class GuideProfileService implements AdventureFacade { // Implementira Fa
     private final GuideLanguageRepository guideLanguageRepository;
     private final AdventureClient adventureClient;
 
-    // --- LOKALNA LOGIKA VODIČA (SVE OSTAJE ISTO) ---
-
     @Transactional
     public GuideProfileResponse createGuide(GuideProfileRequest request) {
         if (guideRepository.existsByContactEmail(request.getContactEmail())) {
-            throw new RuntimeException("Greška: Email '" + request.getContactEmail() + "' je zauzet.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Greška: Email '" + request.getContactEmail() + "' je zauzet."
+            );
         }
+
         GuideProfile guide = mapper.toEntity(request);
         return mapper.toResponse(guideRepository.save(guide));
     }
@@ -54,17 +56,26 @@ public class GuideProfileService implements AdventureFacade { // Implementira Fa
     public GuideProfileResponse getGuideById(Long id) {
         return guideRepository.findById(id)
                 .map(mapper::toResponse)
-                .orElseThrow(() -> new RuntimeException("Vodič ID " + id + " ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Vodič ID " + id + " ne postoji."
+                ));
     }
 
     @Transactional
     public GuideProfileResponse updateGuide(Long id, GuideProfileRequest request) {
         GuideProfile existing = guideRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vodič ID " + id + " ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Vodič ID " + id + " ne postoji."
+                ));
 
         if (!existing.getContactEmail().equals(request.getContactEmail()) &&
                 guideRepository.existsByContactEmail(request.getContactEmail())) {
-            throw new RuntimeException("Greška: Email '" + request.getContactEmail() + "' je zauzet.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Greška: Email '" + request.getContactEmail() + "' je zauzet."
+            );
         }
 
         existing.setFirstName(request.getFirstName());
@@ -80,7 +91,10 @@ public class GuideProfileService implements AdventureFacade { // Implementira Fa
     @Transactional
     public void deleteGuide(Long id) {
         if (!guideRepository.existsById(id)) {
-            throw new RuntimeException("Brisanje neuspelo, ID " + id + " nije u bazi.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Brisanje neuspelo, ID " + id + " nije u bazi."
+            );
         }
         guideRepository.deleteById(id);
     }
@@ -100,20 +114,30 @@ public class GuideProfileService implements AdventureFacade { // Implementira Fa
 
     public boolean isGuideReadyForField(Long guideId) {
         GuideProfile guide = guideRepository.findById(guideId)
-                .orElseThrow(() -> new RuntimeException("Vodič nije pronađen"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Vodič nije pronađen."
+                ));
+
         long validCerts = certificationRepository.countValidCertifications(guideId, LocalDate.now());
         return guide.getRating() >= 4.0 && validCerts > 0;
     }
 
     @Transactional
     public GuideProfileResponse applyLanguageBonus(Long guideId) {
-        GuideProfile guide = guideRepository.findById(guideId).orElseThrow();
+        GuideProfile guide = guideRepository.findById(guideId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Vodič nije pronađen."
+                ));
+
         long langCount = guideLanguageRepository.countByGuideProfileId(guideId);
 
         if (langCount >= 3) {
             double newRating = Math.min(5.0, guide.getRating() + 0.5);
             guide.setRating(newRating);
         }
+
         return mapper.toResponse(guideRepository.save(guide));
     }
 
@@ -126,15 +150,21 @@ public class GuideProfileService implements AdventureFacade { // Implementira Fa
         );
     }
 
-    // --- IMPLEMENTACIJA ADVENTURE FASADE (EKSTERNA KOMUNIKACIJA) ---
-
     @Override
     @CircuitBreaker(name = "adventureCB", fallbackMethod = "fallbackPremium")
     @Retry(name = "adventureRetry")
     public List<RemoteAdventureDTO> getPremiumReport(Long guideId, Double minPrice) {
-        if (minPrice < 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cena ne može biti negativna");
+        if (minPrice == null || minPrice < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Cena ne može biti negativna"
+            );
+        }
+
         List<RemoteAdventureDTO> list = adventureClient.getPremiumAdventures(guideId, minPrice);
-        if (list.size() > 100) System.out.println("WARN: Neobično veliki broj premium tura!");
+        if (list.size() > 100) {
+            System.out.println("WARN: Neobično veliki broj premium tura!");
+        }
         return list;
     }
 
@@ -143,7 +173,9 @@ public class GuideProfileService implements AdventureFacade { // Implementira Fa
     @Retry(name = "adventureRetry")
     public Double getRevenue(Long guideId) {
         Double revenue = adventureClient.getGuideRevenue(guideId);
-        if (revenue > 1000000) System.out.println("ALERT: Detektovan nerealno visok prihod!");
+        if (revenue > 1000000) {
+            System.out.println("ALERT: Detektovan nerealno visok prihod!");
+        }
         return revenue;
     }
 
@@ -158,22 +190,34 @@ public class GuideProfileService implements AdventureFacade { // Implementira Fa
     @CircuitBreaker(name = "adventureCB", fallbackMethod = "fallbackCategoryOnly")
     @Retry(name = "adventureRetry")
     public List<RemoteAdventureDTO> getAllInCategory(Long categoryId) {
-        if (categoryId <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nevalidan ID kategorije.");
+        if (categoryId == null || categoryId <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Nevalidan ID kategorije."
+            );
+        }
+
         List<RemoteAdventureDTO> adventures = adventureClient.getByCategory(categoryId);
-        if (adventures.isEmpty()) System.out.println("INFO: Kategorija " + categoryId + " je prazna.");
+        if (adventures.isEmpty()) {
+            System.out.println("INFO: Kategorija " + categoryId + " je prazna.");
+        }
         return adventures;
     }
 
-    // --- FALLBACK METODE ---
-
-    public List<RemoteAdventureDTO> fallbackCategoryOnly(Long categoryId, Throwable t) { return new ArrayList<>(); }
+    public List<RemoteAdventureDTO> fallbackCategoryOnly(Long categoryId, Throwable t) {
+        return new ArrayList<>();
+    }
 
     public List<RemoteAdventureDTO> fallbackPremium(Long guideId, Double minPrice, Throwable t) {
         System.out.println("LOG: Adventure-service nedostupan. Razlog: " + t.getMessage());
         return new ArrayList<>();
     }
 
-    public Double fallbackRevenue(Long guideId, Throwable t) { return 0.0; }
+    public Double fallbackRevenue(Long guideId, Throwable t) {
+        return 0.0;
+    }
 
-    public Boolean fallbackOverload(Long guideId, Throwable t) { return false; }
+    public Boolean fallbackOverload(Long guideId, Throwable t) {
+        return false;
+    }
 }

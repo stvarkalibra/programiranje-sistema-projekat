@@ -6,8 +6,10 @@ import org.raflab.guideservice.dtoLayer.response.LanguageResponse;
 import org.raflab.guideservice.entityLayer.Language;
 import org.raflab.guideservice.repositoryLayer.LanguageRepository;
 import org.raflab.guideservice.utils.LanguageEntityMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,14 +23,18 @@ public class LanguageService {
 
     @Transactional
     public LanguageResponse createLanguage(LanguageRequest request) {
-        // 1. Provera da li jezik sa tim imenom već postoji
         if (languageRepository.existsByLanguageName(request.getLanguageName())) {
-            throw new RuntimeException("Greška: Jezik '" + request.getLanguageName() + "' je već u katalogu.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Greška: Jezik '" + request.getLanguageName() + "' je već u katalogu."
+            );
         }
 
-        // 2. Provera da li ISO kod već postoji
         if (languageRepository.existsByLanguageCode(request.getLanguageCode())) {
-            throw new RuntimeException("Greška: ISO kod '" + request.getLanguageCode() + "' već koristi drugi jezik.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Greška: ISO kod '" + request.getLanguageCode() + "' već koristi drugi jezik."
+            );
         }
 
         Language language = mapper.toEntity(request);
@@ -44,18 +50,34 @@ public class LanguageService {
     public LanguageResponse getLanguageById(Long id) {
         return languageRepository.findById(id)
                 .map(mapper::toResponse)
-                .orElseThrow(() -> new RuntimeException("Greška: Jezik sa ID " + id + " nije pronađen."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Greška: Jezik sa ID " + id + " nije pronađen."
+                ));
     }
 
     @Transactional
     public LanguageResponse updateLanguage(Long id, LanguageRequest request) {
         Language existing = languageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Greška: Izmena nemoguća, jezik ID " + id + " ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Greška: Izmena nemoguća, jezik ID " + id + " ne postoji."
+                ));
 
-        // Validacija za unikatnost pri izmeni
         if (!existing.getLanguageName().equals(request.getLanguageName()) &&
                 languageRepository.existsByLanguageName(request.getLanguageName())) {
-            throw new RuntimeException("Greška: Naziv jezika je već zauzet.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Greška: Naziv jezika je već zauzet."
+            );
+        }
+
+        if (!existing.getLanguageCode().equals(request.getLanguageCode()) &&
+                languageRepository.existsByLanguageCode(request.getLanguageCode())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Greška: ISO kod jezika je već zauzet."
+            );
         }
 
         existing.setLanguageName(request.getLanguageName());
@@ -67,7 +89,10 @@ public class LanguageService {
     @Transactional
     public void deleteLanguage(Long id) {
         if (!languageRepository.existsById(id)) {
-            throw new RuntimeException("Greška: Brisanje neuspelo, jezik nije u bazi.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Greška: Brisanje neuspelo, jezik nije u bazi."
+            );
         }
         languageRepository.deleteById(id);
     }

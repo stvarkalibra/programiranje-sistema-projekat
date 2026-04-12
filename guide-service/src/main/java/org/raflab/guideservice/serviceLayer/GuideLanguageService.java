@@ -10,8 +10,10 @@ import org.raflab.guideservice.repositoryLayer.GuideLanguageRepository;
 import org.raflab.guideservice.repositoryLayer.GuideProfileRepository;
 import org.raflab.guideservice.repositoryLayer.LanguageRepository;
 import org.raflab.guideservice.utils.GuideLanguageEntityMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,14 +30,25 @@ public class GuideLanguageService {
     @Transactional
     public GuideLanguageResponse createGuideLanguage(GuideLanguageRequest request) {
         GuideProfile guide = guideProfileRepository.findById(request.getGuideProfileId())
-                .orElseThrow(() -> new RuntimeException("Vodič nije pronađen."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Vodič nije pronađen."
+                ));
 
         Language language = languageRepository.findById(request.getLanguageId())
-                .orElseThrow(() -> new RuntimeException("Jezik nije pronađen."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Jezik nije pronađen."
+                ));
 
-        // Provera duplikata
-        if (guideLanguageRepository.findByGuideProfileIdAndLanguageId(request.getGuideProfileId(), request.getLanguageId()).isPresent()) {
-            throw new RuntimeException("Vodič već ima registrovan ovaj jezik.");
+        if (guideLanguageRepository.findByGuideProfileIdAndLanguageId(
+                request.getGuideProfileId(),
+                request.getLanguageId()
+        ).isPresent()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Vodič već ima registrovan ovaj jezik."
+            );
         }
 
         GuideLanguage guideLanguage = guideLanguageEntityMapper.toEntity(request, guide, language);
@@ -51,23 +64,43 @@ public class GuideLanguageService {
     public GuideLanguageResponse getGuideLanguageById(Long id) {
         return guideLanguageRepository.findById(id)
                 .map(guideLanguageEntityMapper::toResponse)
-                .orElseThrow(() -> new RuntimeException("Veza ID " + id + " ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Veza ID " + id + " ne postoji."
+                ));
     }
 
     @Transactional
     public GuideLanguageResponse updateGuideLanguage(Long id, GuideLanguageRequest request) {
         GuideLanguage existing = guideLanguageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Veza ne postoji."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Veza ne postoji."
+                ));
 
-        // Provera da li se jezik menja u neki koji vodič već ima (a nije trenutna veza)
         if (!existing.getLanguage().getId().equals(request.getLanguageId())) {
-            if(guideLanguageRepository.findByGuideProfileIdAndLanguageId(request.getGuideProfileId(), request.getLanguageId()).isPresent()) {
-                throw new RuntimeException("Vodič već govori taj jezik.");
+            if (guideLanguageRepository.findByGuideProfileIdAndLanguageId(
+                    request.getGuideProfileId(),
+                    request.getLanguageId()
+            ).isPresent()) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Vodič već govori taj jezik."
+                );
             }
         }
 
-        GuideProfile guide = guideProfileRepository.findById(request.getGuideProfileId()).orElseThrow();
-        Language language = languageRepository.findById(request.getLanguageId()).orElseThrow();
+        GuideProfile guide = guideProfileRepository.findById(request.getGuideProfileId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Vodič nije pronađen."
+                ));
+
+        Language language = languageRepository.findById(request.getLanguageId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Jezik nije pronađen."
+                ));
 
         existing.setGuideProfile(guide);
         existing.setLanguage(language);
@@ -79,7 +112,10 @@ public class GuideLanguageService {
     @Transactional
     public void deleteGuideLanguage(Long id) {
         if (!guideLanguageRepository.existsById(id)) {
-            throw new RuntimeException("Brisanje neuspelo.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Brisanje neuspelo."
+            );
         }
         guideLanguageRepository.deleteById(id);
     }
@@ -91,6 +127,12 @@ public class GuideLanguageService {
     }
 
     public long getActiveLanguageCount(Long guideId) {
+        if (!guideProfileRepository.existsById(guideId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Vodič nije pronađen."
+            );
+        }
         return guideLanguageRepository.countByGuideProfileId(guideId);
     }
 }
