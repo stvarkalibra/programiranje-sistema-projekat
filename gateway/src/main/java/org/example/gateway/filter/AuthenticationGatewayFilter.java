@@ -31,17 +31,12 @@ public class AuthenticationGatewayFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        // Preskačemo actuator i eventualno swagger/gateway javne rute ako hoćete
-        if (path.startsWith("/actuator")) {
+        if (path.startsWith("/actuator") || path.startsWith("/api/auth")) {
             return chain.filter(exchange);
         }
 
         String apiKey = exchange.getRequest().getHeaders().getFirst(HeaderNames.API_KEY);
         String traceId = exchange.getRequest().getHeaders().getFirst(HeaderNames.TRACE_ID);
-
-        if (traceId == null || traceId.isBlank()) {
-            traceId = UUID.randomUUID().toString();
-        }
 
         // Ako nema API key -> 401
         if (apiKey == null || apiKey.isBlank()) {

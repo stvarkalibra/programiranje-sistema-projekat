@@ -21,6 +21,9 @@ public class GatewayRoutesConfig {
     @Value("${services.finansije.url}")
     private String finansijeService;
 
+    @Value("${services.auth.url}")
+    private String authService;
+
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
@@ -62,6 +65,10 @@ public class GatewayRoutesConfig {
                                 "/api/transactions/**"
                         )
                         .uri(finansijeService))
+
+                .route("auth-service", r -> r
+                        .path("/api/auth/**")
+                        .uri(authService))
 
                 .build();
     }
