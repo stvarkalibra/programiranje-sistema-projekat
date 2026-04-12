@@ -2,6 +2,7 @@ package org.example.rezervacije.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.rezervacije.enums.BookingStatus;
@@ -63,8 +64,11 @@ public class BookingController {
     @Operation(summary = "Izmena booking-a")
     public ResponseEntity<BookingResponse> update(
             @PathVariable Long id,
-            @Valid @RequestBody BookingRequest request) {
-
+            @Valid @RequestBody BookingRequest request, HttpServletRequest request2) {
+        System.out.println("TRACE ID = " + request2.getHeader("X-Trace-Id"));
+        System.out.println("USER = " + request2.getHeader("X-Authenticated-User"));
+        System.out.println("ROLE = " + request2.getHeader("X-User-Role"));
+        System.out.println("API KEY = " + request2.getHeader("X-API-KEY"));
         return ResponseEntity.ok(bookingService.update(id, request));
     }
 

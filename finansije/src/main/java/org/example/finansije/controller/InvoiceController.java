@@ -2,6 +2,7 @@ package org.example.finansije.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.finansije.enums.InvoiceStatus;
@@ -39,8 +40,7 @@ public class InvoiceController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Pronalazak invoice-a po id-u")
-    public ResponseEntity<InvoiceResponse> findById(@PathVariable Long id) {
-
+    public ResponseEntity<InvoiceResponse> findById(@PathVariable Long id, HttpServletRequest request) {
         return ResponseEntity.ok(invoiceService.findById(id));
     }
 
@@ -76,8 +76,11 @@ public class InvoiceController {
 
     @PutMapping("/update-booking-status/{id}")
     @Operation(summary = "Izmena statusa bookinga koji nije placen")
-    public void updateBookingStatus(@PathVariable Long id) {
-
+    public void updateBookingStatus(@PathVariable Long id, HttpServletRequest request) {
+        System.out.println("TRACE ID = " + request.getHeader("X-Trace-Id"));
+        System.out.println("USER = " + request.getHeader("X-Authenticated-User"));
+        System.out.println("ROLE = " + request.getHeader("X-User-Role"));
+        System.out.println("API KEY = " + request.getHeader("X-API-KEY"));
         invoiceService.updateBookingStatus(id);
     }
 }
