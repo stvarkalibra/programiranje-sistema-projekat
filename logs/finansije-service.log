@@ -106,3 +106,64 @@
 2026-04-12T11:48:04.594+02:00  INFO 2136 --- [finansije] [RMI TCP Connection(4)-127.0.0.1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
 2026-04-12T11:48:04.594+02:00  INFO 2136 --- [finansije] [RMI TCP Connection(4)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
 2026-04-12T11:48:04.595+02:00  INFO 2136 --- [finansije] [RMI TCP Connection(4)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-04-12T12:14:15.486+02:00  INFO 2136 --- [finansije] [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-12T12:14:15.499+02:00  INFO 2136 --- [finansije] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-04-12T12:14:15.530+02:00  INFO 2136 --- [finansije] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-12T12:14:15.547+02:00  INFO 2136 --- [finansije] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-04-12T12:14:15.552+02:00  INFO 2136 --- [finansije] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-04-12T12:14:53.991+02:00  INFO 2699 --- [finansije] [main] o.e.finansije.FinansijeApplication       : Starting FinansijeApplication using Java 23.0.1 with PID 2699 (/Users/ilijaivkovic/IdeaProjects/ps-project-2025-26-astanisic_mmarinkovic_iivkovic/finansije/target/classes started by ilijaivkovic in /Users/ilijaivkovic/IdeaProjects/ps-project-2025-26-astanisic_mmarinkovic_iivkovic)
+2026-04-12T12:14:53.992+02:00  INFO 2699 --- [finansije] [main] o.e.finansije.FinansijeApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-04-12T12:14:54.010+02:00  INFO 2699 --- [finansije] [main] o.s.c.c.c.ConfigServerConfigDataLoader   : Fetching config from server at : http://localhost:8086
+2026-04-12T12:14:54.010+02:00  INFO 2699 --- [finansije] [main] o.s.c.c.c.ConfigServerConfigDataLoader   : Located environment: name=finansije, profiles=[default], label=null, version=null, state=null
+2026-04-12T12:14:54.335+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.RxJava2OnClasspathCondition    : RxJava2 related Aspect extensions are not activated, because RxJava2 is not on the classpath.
+2026-04-12T12:14:54.336+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.ReactorOnClasspathCondition    : Reactor related Aspect extensions are not activated because Reactor is not on the classpath.
+2026-04-12T12:14:54.339+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.RxJava2OnClasspathCondition    : RxJava2 related Aspect extensions are not activated, because RxJava2 is not on the classpath.
+2026-04-12T12:14:54.339+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.ReactorOnClasspathCondition    : Reactor related Aspect extensions are not activated because Reactor is not on the classpath.
+2026-04-12T12:14:54.347+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.RxJava2OnClasspathCondition    : RxJava2 related Aspect extensions are not activated, because RxJava2 is not on the classpath.
+2026-04-12T12:14:54.348+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.ReactorOnClasspathCondition    : Reactor related Aspect extensions are not activated because Reactor is not on the classpath.
+2026-04-12T12:14:54.350+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.RxJava2OnClasspathCondition    : RxJava2 related Aspect extensions are not activated, because RxJava2 is not on the classpath.
+2026-04-12T12:14:54.351+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.ReactorOnClasspathCondition    : Reactor related Aspect extensions are not activated because Reactor is not on the classpath.
+2026-04-12T12:14:54.355+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.RxJava2OnClasspathCondition    : RxJava2 related Aspect extensions are not activated, because RxJava2 is not on the classpath.
+2026-04-12T12:14:54.355+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.ReactorOnClasspathCondition    : Reactor related Aspect extensions are not activated because Reactor is not on the classpath.
+2026-04-12T12:14:54.364+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.RxJava2OnClasspathCondition    : RxJava2 related Aspect extensions are not activated, because RxJava2 is not on the classpath.
+2026-04-12T12:14:54.364+02:00 DEBUG 2699 --- [finansije] [main] i.g.r.s.u.ReactorOnClasspathCondition    : Reactor related Aspect extensions are not activated because Reactor is not on the classpath.
+2026-04-12T12:14:54.491+02:00  INFO 2699 --- [finansije] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-12T12:14:54.514+02:00  INFO 2699 --- [finansije] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 18 ms. Found 4 JPA repository interfaces.
+2026-04-12T12:14:54.633+02:00  INFO 2699 --- [finansije] [main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=4fa0ab85-f13d-33d1-a7a5-231a5d9706b8
+2026-04-12T12:14:54.902+02:00  INFO 2699 --- [finansije] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8082 (http)
+2026-04-12T12:14:54.907+02:00  INFO 2699 --- [finansije] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-12T12:14:54.907+02:00  INFO 2699 --- [finansije] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.52]
+2026-04-12T12:14:54.926+02:00  INFO 2699 --- [finansije] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-04-12T12:14:54.926+02:00  INFO 2699 --- [finansije] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 915 ms
+2026-04-12T12:14:55.111+02:00  INFO 2699 --- [finansije] [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-12T12:14:55.146+02:00  INFO 2699 --- [finansije] [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.44.Final
+2026-04-12T12:14:55.163+02:00  INFO 2699 --- [finansije] [main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-12T12:14:55.301+02:00  INFO 2699 --- [finansije] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-12T12:14:55.320+02:00  INFO 2699 --- [finansije] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-04-12T12:14:55.416+02:00  INFO 2699 --- [finansije] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:finansijedb user=ASDF
+2026-04-12T12:14:55.417+02:00  INFO 2699 --- [finansije] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-04-12T12:14:55.434+02:00  WARN 2699 --- [finansije] [main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-12T12:14:55.444+02:00  INFO 2699 --- [finansije] [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-12T12:14:56.267+02:00  INFO 2699 --- [finansije] [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-12T12:14:56.321+02:00  INFO 2699 --- [finansije] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-12T12:14:56.692+02:00  WARN 2699 --- [finansije] [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-12T12:14:56.931+02:00  INFO 2699 --- [finansije] [main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-12T12:14:58.342+02:00  INFO 2699 --- [finansije] [main] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:finansijedb'
+2026-04-12T12:14:58.470+02:00  INFO 2699 --- [finansije] [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 7 endpoints beneath base path '/actuator'
+2026-04-12T12:14:58.611+02:00  INFO 2699 --- [finansije] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8082 (http) with context path '/'
+2026-04-12T12:14:58.632+02:00  INFO 2699 --- [finansije] [main] o.e.finansije.FinansijeApplication       : Started FinansijeApplication in 5.052 seconds (process running for 5.623)
+2026-04-12T12:14:58.944+02:00  INFO 2699 --- [finansije] [RMI TCP Connection(4)-127.0.0.1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-12T12:14:58.945+02:00  INFO 2699 --- [finansije] [RMI TCP Connection(4)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-04-12T12:14:58.948+02:00  INFO 2699 --- [finansije] [RMI TCP Connection(4)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+2026-04-12T12:41:43.844+02:00  INFO 2699 --- [finansije] [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-12T12:41:43.857+02:00  INFO 2699 --- [finansije] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-04-12T12:41:43.874+02:00  INFO 2699 --- [finansije] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-12T12:41:43.909+02:00  INFO 2699 --- [finansije] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-04-12T12:41:43.912+02:00  INFO 2699 --- [finansije] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
