@@ -1,4 +1,4 @@
-package org.raflab.avanturaservice.config;
+package org.raflab.avanturaservice.errorHandling;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
